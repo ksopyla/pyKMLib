@@ -22,13 +22,13 @@ iris = datasets.load_iris()
 #
 
 # multiclass 
-X, Y = datasets.load_svmlight_file('glass.scale.txt')
+#X, Y = datasets.load_svmlight_file('Data/glass.scale.txt')
 #X, Y = datasets.load_svmlight_file('glass.scale_3cls.txt')
 
 #binary
 #X, Y = datasets.load_svmlight_file('glass.scale_binary')
-#X, Y = datasets.load_svmlight_file('heart_scale')
-#X, Y = datasets.load_svmlight_file('w8a')
+X, Y = datasets.load_svmlight_file('Data/heart_scale')
+#X, Y = datasets.load_svmlight_file('Data/w8a')
 
 #X, Y = datasets.load_svmlight_file('toy_2d_16.train')
 
@@ -42,14 +42,18 @@ t0=time.clock()
 svm_m= clf.fit(X,Y)
 t1=time.clock()
 
-print '\nTakes: ', t1-t0
+print '\nTrains Takes: ', t1-t0
 #print 'alpha\n',clf.dual_coef_.toarray()
 
 #print 'nSV=',clf.n_support_
 #print 'sv \n',clf.support_vectors_.toarray()
 #print 'sv idx=',clf.support_
 
+
+t0=time.clock()
 pred1 = clf.predict(X)
+t1=time.clock()
+print '\nPredict Takes: ', t1-t0
 #print pred1
 acc = (0.0+sum(Y==pred1))/len(Y)
 
@@ -91,7 +95,11 @@ for k in xrange(len(svm_solver.models)):
     print 'nSV=',m.NSV
     #print m.Alpha
 
+
+t0=time.clock()
 pred2,dec_vals=svm_solver.predict(X)
+t1=time.clock()
+print '\nPredict Takes: ', t1-t0
 #print pred2
 acc = (0.0+sum(Y==pred2))/len(Y)
 

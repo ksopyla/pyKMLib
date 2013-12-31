@@ -605,22 +605,40 @@ class Solver(object):
         dataPoints = X.shape[0]
         dec_vals = np.zeros( (mCount,dataPoints) )        
         
+        partSize = 1000
+        parts = int(np.ceil((0.0+dataPoints)/partSize))
+        startPart=0
+        endPart=partSize
+        
         for i in xrange(mCount):
             m=self.models[i]        
             SV = m.SV
             self.kernel.init(SV,[])
-            
-            #big matrix nSV x nr_points (10k x 40k)
-            
-            #partX=X[]            
-            dec=self.kernel.K_vec(X)
-            
             alpha = m.Alpha
-            #dec_vals=alpha.dot(dec_vals)
-            dec = dec.T.dot(alpha)
-            
-            dec_vals[i,:]=dec-m.Rho
-            #dec_vals[i,:]-=m.Rho
+            for p in xrange(parts):
+                startPart=p*partSize
+                endPart=min(startPart+partSize,dataPoints)
+                partX=X[startPart:endPart,:]  
+                
+                dec=self.kernel.K_vec(partX)
+                dec = dec.T.dot(alpha)
+                dec_vals[i,startPart:endPart]=dec-m.Rho
+              
+        
+#        for i in xrange(mCount):
+#            m=self.models[i]        
+#            SV = m.SV
+#            self.kernel.init(SV,[])
+#            
+#            #big matrix nSV x nr_points (10k x 40k)
+#            dec=self.kernel.K_vec(X)
+#            
+#            alpha = m.Alpha
+#            #dec_vals=alpha.dot(dec_vals)
+#            dec = dec.T.dot(alpha)
+#            
+#            dec_vals[i,:]=dec-m.Rho
+#            #dec_vals[i,:]-=m.Rho
         
         
         votes=np.zeros((dataPoints,nr_cls))
@@ -781,7 +799,11 @@ class RBF(Kernel):
         
         dot=self.X.dot(vec.T)  
         x2=self.Xsquare.reshape((self.Xsquare.shape[0],1))
-        v2 = vec.multiply(vec).sum(1).reshape((1,vec.shape[0]))        
+        if(sp.issparse(vec)):        
+            v2 = vec.multiply(vec).sum(1).reshape((1,vec.shape[0]))        
+        else:
+            v2 =  np.einsum('...i,...i',vec,vec)
+        
         return np.exp(-self.gamma*(x2+v2-2*dot))
         
         
@@ -790,6 +812,8 @@ class RBF(Kernel):
         """
         Computes kernel matrix diagonal
         """
+        
+        #for rbf diagonal consists of ones exp(0)==1
         self.Diag = np.ones(self.X.shape[0])
 
         if(sp.issparse(self.X)):
