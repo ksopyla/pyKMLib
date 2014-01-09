@@ -12,10 +12,7 @@ from pycuda.compiler import SourceModule
 
 
 
-kernel_file = "KernelsEllpackCol2.cu"
 
-with open (kernel_file,"r") as CudaFile:
-    data = CudaFile.read();
     
 
 import sparse_formats as spf
@@ -23,30 +20,44 @@ import numpy as np
 import scipy.sparse as sp
 
 from sklearn import datasets
-X, Y = datasets.load_svmlight_file('Data/heart_scale')
+#X, Y = datasets.load_svmlight_file('Data/heart_scale')
+#X, Y = datasets.load_svmlight_file('Data/toy_2d_16.train')
+X, Y = datasets.load_svmlight_file('Data/w8a')
+
+X=X.astype(np.float32)
+Y=Y.astype(np.float32)
 
 num_el,dim = X.shape
 gamma = 0.5
-threadsPerRow = 2
+threadsPerRow = 1
+prefetch=2
 
-from SVMsolver import *
+from CpuSolvers import *
 rbf = RBF()
 rbf.gamma=gamma
 
 rbf.init(X,Y)
 
 i=0
-j=1
-vecI = X[i,:].toarray().astype(np.float32)
-vecJ = X[j,:].toarray().astype(np.float32)
-ki = rbf.K_vec(vecI)
-kj = rbf.K_vec(vecJ)
+j=2
+vecI = X[i,:].toarray()
+vecJ = X[j,:].toarray()
+ki =Y[i]*Y* rbf.K_vec(vecI).flatten()
+kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
+
+kij= np.array( [ki,kj]).flatten()
 
 
-v,c,r=spf.csr2ertilp(X)
+v,c,r=spf.csr2ellpack(X,align=prefetch)
 
-self_dot = np.ones(num_el)
-results = np.zeros(2*num_el)
+sd=rbf.Diag
+self_dot = rbf.Xsquare
+results = np.zeros(2*num_el,dtype=np.float32)
+
+kernel_file = "KernelsEllpackCol2.cu"
+
+with open (kernel_file,"r") as CudaFile:
+    data = CudaFile.read();
 
 #copy memory to device
 g_val = cuda.to_device(v)
@@ -72,29 +83,24 @@ vecJ_tex=module.get_texref('VecJ_TexRef')
 g_vecI = cuda.to_device(vecI)
 vecI_tex.set_address(g_vecI,vecI.nbytes)
 
-
 g_vecJ = cuda.to_device(vecJ)
 vecJ_tex.set_address(g_vecJ,vecJ.nbytes)
 
-
 texList=[vecI_tex,vecJ_tex]
-
 
 tpb=128
 bpg =int( np.ceil( (threadsPerRow*num_el+0.0)/tpb ))
-
 
 g_num_el = np.int32(num_el)
 g_i = np.int32(i)
 g_j = np.int32(j)
 g_gamma = np.float32(gamma)
-func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,4,1),grid=(bpg,1),texrefs=texList)
-
+func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,1,1),grid=(bpg,1),texrefs=texList)
 
 
 cuda.memcpy_dtoh(results,g_out)
 
-print results
+print "Error ",np.square(results-kij).sum()
 
 
 
