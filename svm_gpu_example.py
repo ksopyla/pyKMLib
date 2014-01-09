@@ -5,7 +5,9 @@ Created on Fri Dec 06 16:01:51 2013
 @author: ksirg
 """
 
-from CpuSolvers import *
+
+
+from GPUSolvers import *
 
 import numpy as np
 import scipy.sparse as sp
@@ -69,9 +71,9 @@ print '--------------\n'
 #X = np.array([ (1,2), (3,4), (5,6), (7,8), (9,0)])
 #Y = np.array([4,1,2,1,4])
 
-svm_solver =  FOSVM(X,Y,C)
+svm_solver =  GPUSVM2Col(X,Y,C)
 #kernel = Linear()
-kernel = RBF()
+kernel = GPURBF()
 
 
 t0=time.clock()

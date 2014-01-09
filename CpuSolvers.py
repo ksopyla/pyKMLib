@@ -9,110 +9,21 @@ import numpy as np
 import scipy.sparse as sp
 import pylru
 
-
+from solver_helpers import *
+from kernels import *
                    
         
-from numba import autojit      
-
-
-@autojit
-def Compute_Rho_numba(G,alpha,y,C):
-    '''
-    Compute rho with numba
-    G - array like, gradient
-    alpha - array like, alpha coef
-    y - array like, labels
-    C - scalar, penalty SVM pram
-    '''
-    ub=100000000
-    lb=-10000000
-    nr_free=0
-    sum_free=0.0
-    
-    for i in xrange(0,G.shape[0]):
-        yG = y[i]*G[i]
-        ai = alpha[i]
-        if(ai==0):
-            if(y[i]>0):
-                ub=min(ub,yG)
-            else:
-                lb=max(lb,yG)
-        elif(ai==C):
-            if(y[i]<0):
-                ub=min(ub,yG)
-            else:
-                lb=max(lb,yG)
-        else:
-            nr_free+=1
-            sum_free+=yG
-    r=0        
-    if(nr_free>0):
-        r=sum_free/nr_free
-    else:
-        r=(ub+lb)/2
-    
-    return r
-            
-        
-        
-        
-
-@autojit
-def Update_gradient_numba(G,Ki,Kj,delta_i,delta_j):
-    '''
-    Updates gradients based on kernel i,j kolumns and deltas 
-    Use numba for speed, much faster then vecotrization with numpy
-    Parameters
-    ------------
-    G - array like, gradient for update
-    Ki,Kj - array like,  i,j kernel kolumns
-    delta_i,delta_j - scalras, delta alpha i and j
-    '''
-    for k in xrange(G.shape[0]):
-        G[k]+=Ki[k]*delta_i+Kj[k]*delta_j            
-    
-    
-        
-@autojit
-def FindMaxMinGrad(A,B,alpha,grad,y):
-    '''
-    Finds i,j indices with maximal violatin pair scheme
-    A,B - 3 dim arrays, contains bounds A=[-C,0,0], B=[0,0,C]
-    alpha - array like, contains alpha coeficients
-    grad - array like, gradient
-    y - array like, labels
-    '''
-    GMaxI=-100000
-    GMaxJ=-100000
-    
-    GMax_idx=-1
-    GMin_idx=-1
-    
-    for i in range(0,alpha.shape[0]):
-        
-        if (y[i] * alpha[i]< B[y[i]+1]):
-            if( -y[i]*grad[i]>GMaxI):
-                GMaxI= -y[i]*grad[i]
-                GMax_idx = i
-                
-        if (y[i] * alpha[i]> A[y[i]+1]):
-            if( y[i]*grad[i]>GMaxJ):
-                GMaxJ= y[i]*grad[i]
-                GMin_idx = i
-                
-    return (GMaxI,GMaxJ,GMax_idx,GMin_idx)                
-                
-                
+          
                 
 #from numba import autojit
 #import numba 
 #
 #numba.autojit
-class Solver(object):
+class FOSVM(object):
     """
     SVM solver class, 
     
-    Uses first order SMO solver and CUDA for trainning acceleration
+    Uses first order SMO solver
     """
     C=1;
     models=[]
@@ -127,8 +38,6 @@ class Solver(object):
     
     """ Labels """
     Y=[]    
-    
-    
     
     _EPS = 0.001
     
@@ -672,46 +581,9 @@ class Solver(object):
       
       
 
-class Model:
-    """Model class """
-    
-    def __init__(self):
-        pass
-        
 
-class Kernel:
-    """Base kernel class """
-    
-    cache_size =100
-   
-    def __init__(self,cache_size=100):
-        self.cache_size=cache_size
-        
-        
-        
-    def init(self,X,Y):
-        
-        #assert X.shape[0]==Y.shape[0]
-        
-        self.N = X.shape[0]
-        column_size = self.N*4
-        cacheMB = self.cache_size*1024*1024 #100MB for cache size   
-        
-        #how many kernel colums will be stored in cache
-        cache_items = np.floor(cacheMB/column_size).astype(int)
-        
-        cache_items = min(self.N,cache_items)
-        self.kernel_cache = pylru.lrucache(cache_items)        
-        
-        self.X =X
-        self.Y = Y   
-        
-        self.compute_diag()
-        
-        
-    def clean(self):
-        """ clean the kernel cache """
-        self.kernel_cache.clear()
+
+
             
         
     
@@ -719,114 +591,6 @@ class Kernel:
       
 
    
-
-class Linear(Kernel):
-    """Linear Kernel"""
-    
-    def K(self,i):
-        """ computes i-th kernel column """
-        
-        
-
-        if( i in self.kernel_cache):
-            Ki = self.kernel_cache[i]
-        else:
-            #for dense numpy array
-            #ki = np.dot(self.X,vec)
-
-            #for sparse matrix                                
-            
-            # first variant
-#            vec = self.X[i,:];
-#            Ki = self.X.dot(vec.T)
-#            Ki = Ki.toarray()
-            
-            
-            vec = self.X[i,:].toarray().flatten();
-            Ki = self.X.dot(vec.T)
-            
-            
-            #insert into cache
-            self.kernel_cache[i]=Ki
-
-        return Ki
-    def K_vec(self,vec):
-        
-        return self.X.dot(vec.T)        
-        
-        
-    def compute_diag(self):
-        """
-        Computes kernel matrix diagonal
-        """
-        # can be implementen in two ways
-        #1. (x**2).sum(1) or
-        #2. np.einsum('...i,...i',x,x)
-        #second one is faster
-        
-        if(sp.issparse(self.X)):
-            # result as matrix
-            self.Diag = self.X.multiply(self.X).sum(1)
-            #result as array
-            self.Diag = np.asarray(self.Diag).flatten()
-        else:
-            self.Diag =np.einsum('...i,...i',self.X,self.X)
-        
-
-
-class RBF(Kernel):
-    """RBF Kernel"""
-    gamma=1.0
-    
-    
-    def K(self,i):
-        """ computes i-th kernel column """ 
-        if( i in self.kernel_cache):
-            Ki = self.kernel_cache[i]
-        else:
-            vec = self.X[i,:].toarray().flatten()           
-            xi2=self.Xsquare[i]
-            Ki =np.exp(-self.gamma*(xi2+ self.Xsquare-2*self.X.dot(vec.T)) ) 
-            #insert into cache
-            self.kernel_cache[i]=Ki
-
-        return Ki
-        
-    def K_vec(self,vec):
-        '''
-        vec - array-like, row ordered data, should be not to big
-        '''
-        
-        dot=self.X.dot(vec.T)  
-        x2=self.Xsquare.reshape((self.Xsquare.shape[0],1))
-        if(sp.issparse(vec)):        
-            v2 = vec.multiply(vec).sum(1).reshape((1,vec.shape[0]))        
-        else:
-            v2 =  np.einsum('...i,...i',vec,vec)
-        
-        return np.exp(-self.gamma*(x2+v2-2*dot))
-        
-        
-        
-    def compute_diag(self):
-        """
-        Computes kernel matrix diagonal
-        """
-        
-        #for rbf diagonal consists of ones exp(0)==1
-        self.Diag = np.ones(self.X.shape[0])
-
-        if(sp.issparse(self.X)):
-            # result as matrix
-            self.Xsquare = self.X.multiply(self.X).sum(1)
-            #result as array
-            self.Xsquare = np.asarray(self.Xsquare).flatten()
-        else:
-            self.Xsquare =np.einsum('...i,...i',self.X,self.X)
-        
-        
-    
-
 
 
 
