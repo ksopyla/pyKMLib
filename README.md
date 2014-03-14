@@ -21,13 +21,13 @@ Prerequisits
 Ubuntu 13.10 prerequisits installation
 -----------
 
-** numba installation** 
+**numba installation** 
 
 * *llvm* - sudo apt-get install llvm 
 This install llvm 3.4
 
 * *llvmpy* - 
-
+'
 wget https://github.com/llvmpy/llvmpy/releases/tag/0.12.3
 
 tar zxvf 0.12.3.tar.gz
@@ -35,12 +35,13 @@ tar zxvf 0.12.3.tar.gz
 cd 0.12.3
 
 sudo LLVM_CONFIG_PATH=/usr/bin/llvm-config python setup.py install
+'
 
 * *numba* - sudo pip install numba
 
-** pycuda installation**
+**pycuda installation**
 
-**Warning!**
+*Warning!*
 
 *sudo apt-get install pycuda* - probably override your nvidia driver installation, so If you previously install nvidia driver and cuda toolkit previously than it is not recomended. (I have install cuda toolkit and driver with help http://askubuntu.com/questions/380609/anyone-has-successfully-installed-cuda-5-5-on-ubuntu-13-10-64-bit )
 
