@@ -8,7 +8,7 @@ __constant__ float GAMMA=0.5f;
 
 
 
-//cuda kernel funtion for computing SVM RBF kernel in multi-class scenario with "one vs one" classification schema, uses 
+//cuda kernel function for computing SVM RBF kernel in multi-class scenario with "one vs one" classification schema, uses 
 // Ellpack-R format for storing sparse matrix, uses ILP - prefetch vector elements in registers
 // it is used in multiclass classifier "one vs one",
 // arrays vals and colIdx should be aligned to PREFETCH_SIZE
@@ -46,7 +46,23 @@ extern "C" __global__ void rbfEllpackILPcol2multi(const float * vals,
 									   )
 {
 
-
+	__shared__ float shISelfDot;
+	__shared__ float shJSelfDot;
+	__shared__ int shYI;
+	__shared__ int shYJ;
+	__shared__ int shRows;
+	__shared__ int shClsSum;
+	
+	if(threadIdx.x==0)
+	{
+		shRows = num_rows;
+		shClsSum= cls_count[0]+cls_count[1];
+		shYI = y[idxI];
+		shYJ = y[idxJ];
+		shISelfDot=selfDot[idxI_ds];
+		shJSelfDot=selfDot[idxJ_ds];
+	}
+	__syncthreads();
 	const unsigned int t   = blockDim.x * blockIdx.x + threadIdx.x;  // global thread index
 		
 	//thread class map, 0 - first class, 1- second class
@@ -61,13 +77,19 @@ extern "C" __global__ void rbfEllpackILPcol2multi(const float * vals,
 		int cls_nr = cls[th_cls];
 		int rowIdx = th_cls_offset+cls_start[cls_nr];
 		
-		float preVals[PREFETCH_SIZE]={0};
+		float preVals[PREFETCH_SIZE]={0.0};
 		int preColls[PREFETCH_SIZE]={-1};
-		float dotI[PREFETCH_SIZE]={0};
-		float dotJ[PREFETCH_SIZE]={0};
+		float dotI[PREFETCH_SIZE]={0,0};
+		float dotJ[PREFETCH_SIZE]={0,0};
 
 		int maxEl = rowLength[rowIdx];
 		unsigned int j=0;
+		
+		for( j=0; j<PREFETCH_SIZE;j++)			
+		{
+			dotI[j]=0.0f;
+			dotJ[j]=0.0f;	
+		}
 		
 		for(unsigned int i=0; i<maxEl;i++)
 		{
@@ -103,8 +125,13 @@ extern "C" __global__ void rbfEllpackILPcol2multi(const float * vals,
 		// results[rIdx]=y[rIdx];
 		// results[rIdx+cls_sum]=y[rIdx];
 		
-		results[rIdx]=y[rIdx]*GAMMA;
-		results[rIdx+cls_sum]=y[rIdx];
+		//rbf
+		//results[rIdx]=selfDot[rowIdx]+shISelfDot;
+		//results[rIdx+shClsSum]=selfDot[rowIdx]+shJSelfDot;
+		// results[rIdx]=(dotI[0]);
+		// results[rIdx+shClsSum]=(dotJ[0]);
+		results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[rowIdx]+shISelfDot-2*dotI[0]));
+		results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[rowIdx]+shJSelfDot-2*dotJ[0]));
 	}
 	
 
