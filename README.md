@@ -24,9 +24,13 @@ Ubuntu 13.10 prerequisits installation
 **llvm** - sudo apt-get install llvm
 
 **llvmpy** - 
+
 wget https://github.com/llvmpy/llvmpy/releases/tag/0.12.3
+
 tar zxvf 0.12.3.tar.gz
+
 cd 0.12.3
+
 sudo LLVM_CONFIG_PATH=/usr/bin/llvm-config python setup.py install
 
 **numba** - sudo pip install numba
