@@ -46,7 +46,7 @@ sudo pip install numba
 
 *Warning!*
 
-*sudo apt-get install pycuda* - probably override your nvidia driver installation, so If you previously install nvidia driver and cuda toolkit previously than it is not recomended. (I have install cuda toolkit and driver with help http://askubuntu.com/questions/380609/anyone-has-successfully-installed-cuda-5-5-on-ubuntu-13-10-64-bit )
+*sudo apt-get install pycuda* - probably override your nvidia driver installation, so If you install nvidia driver and cuda toolkit previously than it is not recomended. (I have install cuda toolkit and driver with help http://askubuntu.com/questions/380609/anyone-has-successfully-installed-cuda-5-5-on-ubuntu-13-10-64-bit )
 
 ```sh
 vim ~/.bashrc 
