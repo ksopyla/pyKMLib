@@ -11,8 +11,8 @@ It is a partial python port of .net KMLib project https://github.com/ksirg/KMLib
 
 Prerequisits
 -------------
-Python 2.7
-Numpy 1.7 MKL
-Scipy
-Numba - 
+* Python 2.7
+* Numpy 1.7 MKL
+* Scipy
+* Numba - 
 
