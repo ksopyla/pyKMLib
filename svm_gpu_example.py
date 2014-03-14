@@ -29,8 +29,8 @@ iris = datasets.load_iris()
 
 #binary
 #X, Y = datasets.load_svmlight_file('glass.scale_binary')
-X, Y = datasets.load_svmlight_file('Data/heart_scale')
-#X, Y = datasets.load_svmlight_file('Data/w8a')
+#X, Y = datasets.load_svmlight_file('Data/heart_scale')
+X, Y = datasets.load_svmlight_file('Data/w8a')
 
 #X, Y = datasets.load_svmlight_file('toy_2d_16.train')
 
@@ -111,10 +111,5 @@ print 'acc=',acc
 #x2=X[:,1].toarray()
 #pl.scatter(x1,x2,c=Y,cmap=pl.cm.Paired, s=80)
 #pl.show()
-
-
-
-
-
 
 
