@@ -41,11 +41,11 @@ class FOSVM(object):
     
     _EPS = 0.001
     
-    def __init__(self,X,Y,C=1):
+    def __init__(self,X,Y,C=1, maxIter=500000):
         """ """
         
         
-       
+        self._MAXITER=maxIter;
         self.C=C
         self.X = X
         self.Y =Y
@@ -152,7 +152,7 @@ class FOSVM(object):
         #if alphas~=0 than gradient should be computed
         G = -1*np.ones(n)
         
-        self._MAXITER=500000;
+        
         
         #bug: is not the same as for whole dataset
         Kii= kernel.Diag

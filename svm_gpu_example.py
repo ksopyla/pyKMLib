@@ -34,34 +34,35 @@ X, Y = datasets.load_svmlight_file('Data/heart_scale')
 
 #X, Y = datasets.load_svmlight_file('toy_2d_16.train')
 
-C=1
+C=0.1
+gamma=1.0
 
 from sklearn import svm
 
 #clf = svm.SVC(C=C,kernel='linear',verbose=True)
-clf = svm.SVC(C=C,kernel='rbf',gamma=1.0,verbose=True)
-t0=time.clock()
-svm_m= clf.fit(X,Y)
-t1=time.clock()
-
-print '\nTrains Takes: ', t1-t0
-#print 'alpha\n',clf.dual_coef_.toarray()
-
-#print 'nSV=',clf.n_support_
-#print 'sv \n',clf.support_vectors_.toarray()
-#print 'sv idx=',clf.support_
-
-
-t0=time.clock()
-pred1 = clf.predict(X)
-t1=time.clock()
-print '\nPredict Takes: ', t1-t0
-#print pred1
-acc = (0.0+sum(Y==pred1))/len(Y)
-
-print 'acc=',acc
-
-print '--------------\n'
+#clf = svm.SVC(C=C,kernel='rbf',gamma=gamma,verbose=True)
+#t0=time.clock()
+#svm_m= clf.fit(X,Y)
+#t1=time.clock()
+##
+#print '\nTrains Takes: ', t1-t0
+##print 'alpha\n',clf.dual_coef_.toarray()
+#
+##print 'nSV=',clf.n_support_
+##print 'sv \n',clf.support_vectors_.toarray()
+##print 'sv idx=',clf.support_
+#
+#
+#t0=time.clock()
+#pred1 = clf.predict(X)
+#t1=time.clock()
+#print '\nPredict Takes: ', t1-t0
+##print pred1
+#acc = (0.0+sum(Y==pred1))/len(Y)
+#
+#print 'acc=',acc
+#
+#print '--------------\n'
 
 
 #np.random.seed(0)
@@ -73,7 +74,7 @@ print '--------------\n'
 
 svm_solver =  GPUSVM2Col(X,Y,C)
 #kernel = Linear()
-kernel = GPURBF()
+kernel = GPURBF(gamma=gamma)
 
 
 t0=time.clock()

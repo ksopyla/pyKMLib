@@ -90,7 +90,9 @@ vecJ_tex.set_address(g_vecJ,vecJ.nbytes)
 
 texList=[vecI_tex,vecJ_tex]
 
-tpb=128
+tpb=128#rozmiar bloku, wielokrotnosc 2
+
+#liczba blokow 
 bpg =int( np.ceil( (threadsPerRow*num_el+0.0)/tpb ))
 
 g_num_el = np.int32(num_el)

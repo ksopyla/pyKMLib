@@ -22,6 +22,8 @@ import itertools
 #import numba 
 #
 #numba.autojit
+             
+             
 class GPUSVM2Col(object):
     """
     SVM solver class with cuda accelarated rbf kernel
@@ -46,11 +48,11 @@ class GPUSVM2Col(object):
     
     _EPS = 0.001
     
-    def __init__(self,X,Y,C=1,concurrent_kernels=1):
+    def __init__(self,X,Y,C=1,concurrent_kernels=1,maxIter=500000):
         """ """
         
         
-       
+        self._MAXITER=maxIter;
         self.C=C
         self.X = X.astype(np.float32)
         self.Y =Y
@@ -174,7 +176,7 @@ class GPUSVM2Col(object):
         #if alphas~=0 than gradient should be computed
         G = -1*np.ones(n)
         
-        self._MAXITER=1;
+  
         
         
         Kii= kernel.Diag
@@ -185,6 +187,8 @@ class GPUSVM2Col(object):
             #print iter,'\n-------------\n'
             
             (GMax_i,GMax_j,i,j)= self._select_working_set_numba(alpha,G,y_cls);
+            
+            #i,j = (0, 0)
             if(GMax_i+GMax_j <self._EPS):
                 break
            
@@ -203,9 +207,20 @@ class GPUSVM2Col(object):
                 #j from class 2
                 j_ds=j-self.count_cls[cls_1]+self.start_cls[cls_2]
 
-
-            print 'i,j,i_ds,j_ds',i,j,i_ds,j_ds
+            
             K2col=kernel.K2Col(i,j,i_ds,j_ds,kernel_nr)
+           
+#            print '\n---------'
+#            print 'iter=',iter
+#            print 'i,j,i_ds,j_ds',i,j,i_ds,j_ds
+#            print 'K2col'
+#            print K2col[0:8]
+#            print K2col[150:158]            
+#            
+#            print 'K2col>270'
+#            print K2col[270:278]
+#            print K2col[(270+150):(270+150+8)]            
+            
             
             Kij = K2col[j]
            
@@ -450,7 +465,7 @@ class GPUSVM2Col(object):
         for i in xrange(mCount):
             m=self.models[i]        
             SV = m.SV
-            self.kernel.init(SV,[])
+            self.kernel.predict_init(SV)
             alpha = m.Alpha
             for p in xrange(parts):
                 startPart=p*partSize
@@ -484,7 +499,7 @@ class GPUSVM2Col(object):
         for ci in xrange(nr_cls):
             for cj in xrange(ci+1,nr_cls):
                 for d in xrange(dataPoints):
-                    if(dec_vals[p,d]<0):
+                    if(dec_vals[p,d]>0):
                         votes[d,ci]+=1
                     else:
                         votes[d,cj]+=1
@@ -516,7 +531,7 @@ from pycuda.compiler import SourceModule
 import sparse_formats as spf
 
 class GPURBF(object):
-    """RBF Kernel"""
+    """RBF Kernel with ellpack format"""
     
     cache_size =100
     
@@ -645,7 +660,8 @@ class GPURBF(object):
         Dim =self.Dim        
         vecBytes = Dim*4
         for f in range(self.max_concurrent_kernels):
-            self.func.append(self.module.get_function(self.func_name))
+            gfun = self.module.get_function(self.func_name)
+            self.func.append(gfun)
 
             #init texture for vector I
             vecI_tex=self.module.get_texref('VecI_TexRef')
@@ -661,6 +677,11 @@ class GPURBF(object):
             
             self.main_vecI.append(np.zeros((1,Dim),dtype=np.float32))
             self.main_vecJ.append(np.zeros((1,Dim),dtype=np.float32))
+            
+            texReflist = list(self.tex_ref[f])
+            
+            #function definition P-pointer i-int
+            gfun.prepare("PPPPPPiiiiiiPPP",texrefs=texReflist)
             
         
         #transform X to particular format
@@ -726,6 +747,8 @@ class GPURBF(object):
         self.g_out[kernel_nr] = cuda.to_device(ker_out) # cuda.mem_alloc_like(ker_out)
         
     
+        #add prepare for device functions
+        
     
     
     def K2Col(self,i,j,i_ds,j_ds,kernel_nr):
@@ -760,26 +783,28 @@ class GPURBF(object):
         vecI= self.main_vecI[kernel_nr]
         vecJ= self.main_vecJ[kernel_nr]
         
+#        self.X[i_ds,:].todense(out=vecI)        
+#        self.X[j_ds,:].todense(out=vecJ)  
         
-        print self.X[0:3].toarray()
-        print "i_ds=", i_ds
-        print  "vecI", vecI  
-        self.X[i_ds,:].toarray(out=vecI)        
-        print  "vecI", vecI      
-
-        print "j_ds=", j_ds
-        print  "vecJ", vecJ  
-        self.X[j_ds,:].toarray(out=vecJ)        
-        print  "vecJ", vecJ  
-          
+        #vecI.fill(0)
+        #vecJ.fill(0)
+        
+        
+        
+        #self.X[i_ds,:].toarray(out=vecI)        
+        #self.X[j_ds,:].toarray(out=vecJ)        
+        
+        vecI=self.X.getrow(i_ds).todense()
+        vecJ=self.X.getrow(j_ds).todense()
+        
         
         #copy them to texture
         cuda.memcpy_htod(self.g_vecI[kernel_nr],vecI)
         cuda.memcpy_htod(self.g_vecJ[kernel_nr],vecJ)
         
-        temp = np.empty_like(vecI)
-        cuda.memcpy_dtoh(temp,self.g_vecI[kernel_nr])        
-        print 'temp',temp
+#        temp = np.empty_like(vecI)
+#        cuda.memcpy_dtoh(temp,self.g_vecI[kernel_nr])        
+#        print 'temp',temp
         #lauch kernel
         
         gfunc=self.func[kernel_nr]
@@ -795,20 +820,20 @@ class GPURBF(object):
         gcc = self.g_cls_count[kernel_nr]
         gc  = self.g_cls[kernel_nr]
         bpg=self.bpg[kernel_nr]
-        texReflist = list(self.tex_ref[kernel_nr])
-
-        
-        print "X dot",self.X.dot(vecI.T)[0:4]
-        print "X selfdot",self.Xsquare[0:4]
-        print 'start gpu',i,j
+        texReflist = list(self.tex_ref[kernel_nr])        
        
-        
-        gfunc(self.g_val,self.g_col,self.g_len,self.g_sdot,gy,gout,gN,g_i,g_j,g_ids,g_jds,gNalign,gcs,gcc,gc,block=(self.tpb,1,1),grid=(bpg,1),texrefs=texReflist)
-        print 'end gpu',i,j
+        #print 'start gpu i,j,kernel_nr ',i,j,kernel_nr
+        #gfunc(self.g_val,self.g_col,self.g_len,self.g_sdot,gy,gout,gN,g_i,g_j,g_ids,g_jds,gNalign,gcs,gcc,gc,block=(self.tpb,1,1),grid=(bpg,1),texrefs=texReflist)
+        #print 'end gpu',i,j
         #copy the results
-        cuda.memcpy_dtoh(self.kernel_out[kernel_nr],gout)
+       
+        #grid=(bpg,1),block=(self.tpb,1,1)
+        gfunc.prepared_call((bpg,1),(self.tpb,1,1),self.g_val,self.g_col,self.g_len,self.g_sdot,gy,gout,gN,g_i,g_j,g_ids,g_jds,gNalign,gcs,gcc,gc)
         
-        print 'kernel\n',self.kernel_out[kernel_nr]
+        cuda.memcpy_dtoh(self.kernel_out[kernel_nr],gout)
+
+                
+        
         return self.kernel_out[kernel_nr]
         
     def K_vec(self,vec):
@@ -823,7 +848,7 @@ class GPURBF(object):
         else:
             v2 =  np.einsum('...i,...i',vec,vec)
         
-        return np.exp(-self.gamma*(x2+v2-2*dot))
+        return np.exp(-self.Gamma*(x2+v2-2*dot))
         
     def compute_diag(self):
         """
@@ -846,7 +871,6 @@ class GPURBF(object):
         """ clean the kernel cache """
         #self.kernel_cache.clear()
 
-        print "ker nr",kernel_nr        
         self.bpg[kernel_nr]=0
 
         go = self.g_out[kernel_nr]        
@@ -859,7 +883,13 @@ class GPURBF(object):
 
 
 
-
+    def predict_init(self, SV):
+        """
+        Init the classifier for prediction
+        """        
+        
+        self.X =SV
+        self.compute_diag()
 
 
 
