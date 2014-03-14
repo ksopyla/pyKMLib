@@ -69,7 +69,9 @@ g_out = cuda.to_device(results)
 
 
 #compile module
-module = SourceModule(data,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
+#module = SourceModule(data,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
+
+module = SourceModule(data,keep=True,no_extern_c=True)
 
 #get module function
 func = module.get_function('rbfEllpackILPcol2')
