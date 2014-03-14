@@ -21,23 +21,27 @@ Prerequisits
 Ubuntu 13.10 prerequisits installation
 -----------
 
-**numba installation** 
+##numba installation
 
-* *llvm* - sudo apt-get install llvm 
-This install llvm 3.4
+* *llvm* - This install llvm 3.4
 
-* *llvmpy* - 
+'''sh
+ sudo apt-get install llvm'''
 
-'wget https://github.com/llvmpy/llvmpy/releases/tag/0.12.3
 
+* *llvmpy* - python llvm wrapper
+
+'''sh
+wget https://github.com/llvmpy/llvmpy/releases/tag/0.12.3
 tar zxvf 0.12.3.tar.gz
-
 cd 0.12.3
-
 sudo LLVM_CONFIG_PATH=/usr/bin/llvm-config python setup.py install
-'
+'''
 
-* *numba* - sudo pip install numba
+* *numba* - 
+'''sh
+sudo pip install numba
+'''
 
 **pycuda installation**
 
