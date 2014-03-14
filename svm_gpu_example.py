@@ -114,8 +114,3 @@ print 'acc=',acc
 #pl.show()
 
 
-
-
-
-
-
