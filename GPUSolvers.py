@@ -650,7 +650,9 @@ class GPURBF(object):
             module_code = CudaFile.read();
         
         #compile module
-        self.module = SourceModule(module_code,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
+	#self.module = SourceModule(module_code,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
+	self.module = SourceModule(module_code,keep=True,no_extern_c=True)
+        
         
         (g_gamma,gsize)=self.module.get_global('GAMMA')       
         cuda.memcpy_htod(g_gamma, np.float32(self.Gamma) )
