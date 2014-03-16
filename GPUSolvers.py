@@ -2,7 +2,9 @@
 """
 Created on Sun Dec 01 19:50:27 2013
 
-@author: ksirg
+@author: Krszysztof Sopyła
+@email: krzysztofsopyla@gmail.com
+@license: MIT
 """
 
 import numpy as np
@@ -505,6 +507,11 @@ class GPUSVM2Col(object):
            
       
       
+
+
+
+
+
 
 
 

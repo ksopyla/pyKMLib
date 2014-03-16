@@ -16,8 +16,10 @@ Simple usage of classifier
 '''
 
 
-from GPUSolvers import *
-from GPUKernels import *
+
+
+from pyKMLib.GPUSolvers import *
+from pyKMLib.GPUKernels import *
 
 import numpy as np
 import scipy.sparse as sp
@@ -40,7 +42,7 @@ from sklearn import datasets
 
 #binary
 #X, Y = datasets.load_svmlight_file('glass.scale_binary')
-X, Y = datasets.load_svmlight_file('Data/heart_scale')
+X, Y = datasets.load_svmlight_file('../Data/heart_scale')
 #X, Y = datasets.load_svmlight_file('Data/w8a')
 #X, Y = datasets.load_svmlight_file('toy_2d_16.train')
 

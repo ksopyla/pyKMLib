@@ -54,7 +54,7 @@ sd=rbf.Diag
 self_dot = rbf.Xsquare
 results = np.zeros(2*num_el,dtype=np.float32)
 
-kernel_file = "KernelsEllpackCol2.cu"
+kernel_file = "cu/KernelsEllpackCol2.cu"
 
 with open (kernel_file,"r") as CudaFile:
     data = CudaFile.read();

@@ -9,7 +9,7 @@ Created on Sun Mar 16 15:40:41 2014
 import numpy as np
 import scipy.sparse as sp
 import pylru
-
+import os
 import pycuda
 
 import pycuda.driver as cuda
@@ -27,7 +27,7 @@ class GPURBF(object):
     func_name='rbfEllpackILPcol2multi'
     
     #template    
-    module_file = 'cu/KernelsEllpackCol2.cu'
+    module_file = os.path.dirname(__file__)+'/cu/KernelsEllpackCol2.cu'
     
     #template
     texref_nameI='VecI_TexRef'
@@ -45,6 +45,9 @@ class GPURBF(object):
         max_kernel_nr: int
             determines maximal concurrent kernel column gpu computation
         """
+        print 'hohohohohoh \n'
+        print self.module_file
+        
         self.cache_size=cache_size
   
                
@@ -136,7 +139,7 @@ class GPURBF(object):
             module_code = CudaFile.read();
         
         #compile module
-        self.module = SourceModule(module_code,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
+        self.module = SourceModule(module_code,keep=True,no_extern_c=True)
         
         (g_gamma,gsize)=self.module.get_global('GAMMA')       
         cuda.memcpy_htod(g_gamma, np.float32(self.Gamma) )
