@@ -8,7 +8,7 @@ __constant__ float GAMMA=0.5f;
 
 
 
-//cuda kernel function for computing SVM RBF kernel in multi-class scenario with "one vs one" classification schema, uses 
+//cuda kernel function for computing SVM RBF kernel in multi-class scenario with "one vs one" classification scheme, uses 
 // Ellpack-R format for storing sparse matrix, uses ILP - prefetch vector elements in registers
 // it is used in multiclass classifier "one vs one",
 // arrays vals and colIdx should be aligned to PREFETCH_SIZE
@@ -69,7 +69,8 @@ extern "C" __global__ void rbfEllpackILPcol2multi(const float * vals,
 	int th_cls = (t/cls1_N_aligned) ;//>0 ? 1:0;
 	int th_cls_offset = t-th_cls*cls1_N_aligned;
 	
-	int cls_sum=cls_count[0]+cls_count[1];
+	//int cls_sum=cls_count[0]+cls_count[1]; //=shClsSum
+	
 	
 	if(th_cls_offset<cls_count[th_cls])
 	{
