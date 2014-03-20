@@ -10,16 +10,14 @@ Created on Fri Dec 06 16:01:51 2013
 
 '''
 Simple usage of classifier
-1. Load dataset
-2. 
-
 '''
 
 
+import sys
+sys.path.append("../pyKMLib/")
 
-
-from GPUSolvers import *
-from GPUKernels import *
+import GPUSolvers as gslv
+import GPUKernels as gker
 
 import numpy as np
 import scipy.sparse as sp
@@ -53,9 +51,9 @@ gamma=1.0 #RBF kernel gamma parameter
 
 
 
-svm_solver =  GPUSVM2Col(X,Y,C)
+svm_solver = gslv.GPUSVM2Col(X,Y,C)
 #kernel = Linear()
-kernel = GPURBF(gamma=gamma)
+kernel = gker.GPURBF(gamma=gamma)
 
 #init the classifier, mainly it inits the cuda module and transform data into 
 #particular format
@@ -131,6 +129,3 @@ from sklearn import svm
 #Y = np.random.randint(1,4,n)
 #X = np.array([ (1,2), (3,4), (5,6), (7,8), (9,0)])
 #Y = np.array([4,1,2,1,4])
-
-
-

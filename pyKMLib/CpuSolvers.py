@@ -9,8 +9,8 @@ import numpy as np
 import scipy.sparse as sp
 import pylru
 
-from solver_helpers import *
-from kernels import *
+from SolverHelpers import *
+from Kernels import *
                    
         
           

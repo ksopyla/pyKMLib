@@ -2,7 +2,16 @@
 """
 Created on Mon Dec 30 13:18:51 2013
 
-@author: ksirg
+@author: Krszysztof Sopyła
+@email: krzysztofsopyla@gmail.com
+@githubuser: ksirg
+@license: MIT
+"""
+
+
+"""
+Mainly it demostrates the usage of pycuda.
+
 """
 
 
@@ -10,19 +19,21 @@ import pycuda.driver as cuda
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
 
-
-
-
-    
-
-import sparse_formats as spf
 import numpy as np
-import scipy.sparse as sp
 
 from sklearn import datasets
+    
+
+import sys
+sys.path.append("../pyKMLib/")
+import SparseFormats as spf
+import Kernels as ker
+
+
+
 #X, Y = datasets.load_svmlight_file('Data/heart_scale')
-#X, Y = datasets.load_svmlight_file('Data/toy_2d_16.train')
-X, Y = datasets.load_svmlight_file('Data/w8a')
+X, Y = datasets.load_svmlight_file('Data/toy_2d_16.train')
+#X, Y = datasets.load_svmlight_file('Data/w8a')
 
 X=X.astype(np.float32)
 Y=Y.astype(np.float32)
@@ -32,8 +43,9 @@ gamma = 0.5
 threadsPerRow = 1
 prefetch=2
 
-from CpuSolvers import *
-rbf = RBF()
+
+
+rbf = ker.RBF()
 rbf.gamma=gamma
 
 rbf.init(X,Y)
@@ -48,13 +60,16 @@ kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
 kij= np.array( [ki,kj]).flatten()
 
 
+##----------------------------------------------
+# Ellpakc gpu kernel
+
 v,c,r=spf.csr2ellpack(X,align=prefetch)
 
 sd=rbf.Diag
 self_dot = rbf.Xsquare
 results = np.zeros(2*num_el,dtype=np.float32)
 
-kernel_file = "cu/KernelsEllpackCol2.cu"
+kernel_file = "ellpackKernel.cu"
 
 with open (kernel_file,"r") as CudaFile:
     data = CudaFile.read();
@@ -105,6 +120,12 @@ func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,1,1),g
 cuda.memcpy_dtoh(results,g_out)
 
 print "Error ",np.square(results-kij).sum()
+
+
+##------------------------------------------
+# SERTILP gpu kernel
+
+
 
 
 

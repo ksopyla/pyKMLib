@@ -2,10 +2,18 @@
 """
 Created on Fri Dec 06 16:01:51 2013
 
-@author: ksirg
+@author: Krszysztof Sopyła
+@email: krzysztofsopyla@gmail.com
+@githubuser: ksirg
+@license: MIT
 """
 
-from CpuSolvers import *
+
+import sys
+sys.path.append("../pyKMLib/")
+import SparseFormats as spf
+import Kernels as ker
+import CpuSolvers as slv
 
 import numpy as np
 import scipy.sparse as sp
@@ -69,9 +77,9 @@ print '--------------\n'
 #X = np.array([ (1,2), (3,4), (5,6), (7,8), (9,0)])
 #Y = np.array([4,1,2,1,4])
 
-svm_solver =  FOSVM(X,Y,C)
+svm_solver =  slv.FOSVM(X,Y,C)
 #kernel = Linear()
-kernel = RBF()
+kernel = ker.RBF()
 
 
 t0=time.clock()
