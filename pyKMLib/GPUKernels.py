@@ -45,12 +45,8 @@ class GPURBF(object):
         max_kernel_nr: int
             determines maximal concurrent kernel column gpu computation
         """
-        print 'hohohohohoh \n'
-        print self.module_file
-        
         self.cache_size=cache_size
   
-               
         self.threadsPerRow=1
         self.prefetch=2        
         
@@ -74,8 +70,8 @@ class GPURBF(object):
         #handle to gpu memory for y for each concurrent classifier
         self.g_y=[]
         #handle to gpu memory for results for each concurrent classifier
-        self.g_out=[]
-        self.kernel_out=[] 
+        self.g_out=[] #gpu kernel out
+        self.kernel_out=[] #cpu kernel out
         #blocks per grid for each concurrent classifier    
         self.bpg=[]
         
@@ -86,14 +82,17 @@ class GPURBF(object):
         self.tex_ref=[]
 
         #main vectors 
+        #gpu        
         self.g_vecI=[]
         self.g_vecJ=[]
-        
+        #cpu
         self.main_vecI=[]
         self.main_vecJ=[]    
         
+        #cpu class 
         self.cls_count=[]
         self.cls=[]
+        #gpu class
         self.g_cls_count=[]
         self.g_cls=[]
         
@@ -128,7 +127,8 @@ class GPURBF(object):
         self.kernel_cache = pylru.lrucache(cache_items)        
         
         self.compute_diag()
-           
+        
+        #cuda initialization
         cuda.init()        
         
         self.dev = cuda.Device(0)
@@ -362,15 +362,44 @@ class GPURBF(object):
 
         self.bpg[kernel_nr]=0
 
-        go = self.g_out[kernel_nr]        
-        self.g_out[kernel_nr]=0
-        del go
- 
-        gy = self.g_y[kernel_nr]
-        self.g_y[kernel_nr]=0
-        del gy    
+          
+        
+        
+        
 
 
+    def clean_cuda(self):
+        '''
+        clean all cuda resources
+        '''
+        
+        
+        for f in range(self.max_concurrent_kernels):
+            
+            #vecI_tex=??
+            self.g_vecI[f].free()     
+            #init texture for vector J
+            #vecJ_tex=??
+            self.g_vecJ[f].free()
+            self.g_cls_count[f].free()
+            self.g_cls[f].free()
+            self.bpg[f].free()
+            self.g_y[f].free()
+            self.g_out[f].free()
+
+        #test it
+        #del self.g_out[f] ??
+        
+        #copy format data structure to gpu memory
+        
+        self.g_val.free()
+        self.g_col.free()
+        self.g_len.free()
+        self.g_sdot.free()
+        self.g_cls_start.free()
+         
+        self.ctx.pop()
+        del self.ctx
 
     def predict_init(self, SV):
         """

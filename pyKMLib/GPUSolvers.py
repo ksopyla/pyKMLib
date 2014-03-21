@@ -129,7 +129,7 @@ class GPUSVM2Col(object):
 
                 self.models.append(model)                
                 
-                self.kernel.clean(kernel_nr)
+                kernel.clean(kernel_nr)
 
                 kernel_nr+=1
                         

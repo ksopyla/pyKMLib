@@ -1,0 +1,63 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 20 23:12:01 2014
+
+@author: Krszysztof Sopyła
+@email: krzysztofsopyla@gmail.com
+@license: MIT
+"""
+
+import unittest
+
+import numpy as np
+import scipy.sparse as sp
+from sklearn import datasets
+import sys
+sys.path.append("../pyKMLib/")
+import SparseFormats as spf
+ 
+class TestSparseFormats(unittest.TestCase):
+ 
+    def setUp(self):
+        pass
+ 
+    def test_csr2sertilp(self):
+
+        mat = np.array([ [1,0,2,0,3,0], 
+                         [4,0,5,0,0,0],
+                         [0,0,0,6,7,0],
+                         [0,0,0,0,0,8],
+                         [21,0,22,0,23,0], 
+                         [24,0,25,0,0,0],
+                         [0,0,0,26,27,0],
+                         [0,0,0,0,0,28]
+                       ])
+        
+        sp_mat = sp.csr_matrix(mat)
+        
+        row_len_right = np.array([1,1,1,1,1,1,1,1])
+        sl_start_right = np.array([0,16,32])
+        val_right = np.array([1.0,2.0,4.0,5.0,6.0,7.0,8.0,0.0,3.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,21.0,22.0,24.0,25.0,26.0,27.0,28.0,0.0,23.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0])
+        #collumns taken directly from dataset, 
+        col_vs_right = np.array([1,3,1,3,4,5,6,0,5,0,0,0,0,0,0,0,1,3,1,3,4,5,6,0,5,0,0,0,0,0,0,0])
+        #but in sparse format collumns start from 0  so we have to substract 1      
+        col_right = col_vs_right-1
+        
+        X, Y = datasets.load_svmlight_file('8test_data.txt')
+        
+        val,col,row_len,sl_start=spf.csr2sertilp(sp_mat,
+                                            threadsPerRow=2, 
+                                            prefetch=2,
+                                            sliceSize=4,
+                                            minAlign=2*4)
+                                                    
+        self.assertTrue(np.allclose(row_len,row_len_right), 'sliced ellpack row length arrays are not equal')
+        self.assertTrue(np.allclose(sl_start,sl_start_right), 'sliced ellpack slice start arrays are not equal')       
+        self.assertTrue(np.allclose(val,val_right), 'sliced ellpack values arrays are not equal')
+        self.assertTrue(np.allclose(col,col_right), 'sliced ellpack collumns arrays are not equal')
+       
+        
+ 
+ 
+if __name__ == '__main__':
+    unittest.main(exit=False)
