@@ -87,6 +87,9 @@ t0=time.clock()
 pred2,dec_vals=svm_solver.predict(X)
 t1=time.clock()
 
+
+svm_solver.clean()
+
 print '\nPredict Takes: ', t1-t0
 #print pred2
 acc = (0.0+sum(Y==pred2))/len(Y)

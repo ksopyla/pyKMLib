@@ -506,7 +506,8 @@ class GPUSVM2Col(object):
         return pred,dec_vals
            
       
-      
+    def clean(self):
+        self.kernel.clean_cuda()
 
 
 

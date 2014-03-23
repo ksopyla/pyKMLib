@@ -1,4 +1,4 @@
-﻿/*
+/*
 author: Krzysztof Sopyla
 mail: krzysztofsopyla@gmail.com
 License: MIT
@@ -14,10 +14,15 @@ __constant__ float GAMMA=0.5f;
 
 
 //define PREFETCH_SIZE 2
-__constant__ int PREFETCH_SIZE=2;
-__constant__ int THREAD_PER_ROW=4;
-__constant__ int LOG_THREADS=2; // LOG2(ThreadPerRow)
-__constant__ int SLICE_SIZE=64;
+//__constant__ int PREFETCH_SIZE=2;
+//__constant__ int THREAD_PER_ROW=2;
+//__constant__ int LOG_THREADS=1; // LOG2(ThreadPerRow)
+//__constant__ int SLICE_SIZE=16;
+
+#define PREFETCH_SIZE 2
+#define THREAD_PER_ROW 2
+#define LOG_THREADS 1 // LOG2(ThreadPerRow)
+#define SLICE_SIZE 8
 
 
 //cuda kernel function for computing SVM RBF kernel in multi-class scenario with "one vs one" classification scheme, uses 
@@ -66,6 +71,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	__shared__ int shYI;
 	__shared__ int shYJ;
 	__shared__ int shClsSum;
+	__shared__ int shSliceStart;
 	
 	//shared memory for final reduction for THREAD_PER_ROW for each kernel column
 	__shared__  float shDot[THREAD_PER_ROW*SLICE_SIZE*2];
@@ -80,6 +86,9 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		shYJ = y[idxJ];
 		shISelfDot=selfDot[idxI_ds];
 		shJSelfDot=selfDot[idxJ_ds];
+		
+		//TODO:is it correct
+		shSliceStart=sliceStart[blockIdx.x];
 	}
 	__syncthreads();
 	
@@ -127,8 +136,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		}
 		
 		unsigned int arIdx=0;
-		unsigned int j=0;
-		
+	
 		for(unsigned int i=0; i<maxEl;i++)
 		{
 			#pragma unroll
@@ -165,7 +173,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		for(j=1;j<=LOG_THREADS;j<<=1)
 		{
 			arIdx = 2*j*threadIdx.x;
-			if(arIdx< cls_count){
+			if(arIdx< cls_count[th_cls]){
 				shDot[arIdx]+=shDot[arIdx+j];
 				shDot[arIdx+THREAD_PER_ROW*SLICE_SIZE]+=shDot[arIdx+j+THREAD_PER_ROW*SLICE_SIZE];
 				
@@ -180,8 +188,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			//index within a subset of two considered class
 			int rIdx = th_cls_offset+th_cls*cls_count[0];
 			
-			results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dI);
-		results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[rowIdx]+shJSelfDot-2*dJ);
+			results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dI));
+			results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*dJ));
 			
 		}
 		
@@ -201,10 +209,10 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		}
 		*/
 		
-		int rIdx = th_cls_offset+th_cls*cls_count[0];
-		//rbf
-		results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[rowIdx]+shISelfDot-2*dotI[0]));
-		results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[rowIdx]+shJSelfDot-2*dotJ[0]));
+		//int rIdx = th_cls_offset+th_cls*cls_count[0];
+		////rbf
+		//results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dotI[0]));
+		//results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[rowOW]+shJSelfDot-2*dotJ[0]));
 	}
 }
 

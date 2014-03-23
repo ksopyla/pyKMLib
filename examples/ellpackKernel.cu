@@ -2,7 +2,6 @@
 author: Krzysztof Sopyla
 mail: krzysztofsopyla@gmail.com
 License: MIT
-web page: http://wmii.uwm.edu.pl/~ksopyla/projects/svm-net-with-cuda-kmlib/
 */
 
 #include <float.h>

@@ -16,7 +16,7 @@ import pycuda.driver as cuda
 from pycuda.compiler import SourceModule        
 import SparseFormats as spf
 
-class GPURBF(object):
+class GPURBFEll(object):
     """RBF Kernel with ellpack format"""
     
     cache_size =100
@@ -309,9 +309,10 @@ class GPURBF(object):
         gcc = self.g_cls_count[kernel_nr]
         gc  = self.g_cls[kernel_nr]
         bpg=self.bpg[kernel_nr]
-        texReflist = list(self.tex_ref[kernel_nr])        
-       
+        
+        
         #print 'start gpu i,j,kernel_nr ',i,j,kernel_nr
+        #texReflist = list(self.tex_ref[kernel_nr])                
         #gfunc(self.g_val,self.g_col,self.g_len,self.g_sdot,gy,gout,gN,g_i,g_j,g_ids,g_jds,gNalign,gcs,gcc,gc,block=(self.tpb,1,1),grid=(bpg,1),texrefs=texReflist)
         #print 'end gpu',i,j
         #copy the results
@@ -377,13 +378,15 @@ class GPURBF(object):
         for f in range(self.max_concurrent_kernels):
             
             #vecI_tex=??
-            self.g_vecI[f].free()     
+            #self.g_vecI[f].free()     
+            del self.g_vecI[f]
+
             #init texture for vector J
             #vecJ_tex=??
-            self.g_vecJ[f].free()
+            #self.g_vecJ[f].free()
+            del self.g_vecJ[f]
             self.g_cls_count[f].free()
             self.g_cls[f].free()
-            self.bpg[f].free()
             self.g_y[f].free()
             self.g_out[f].free()
 
@@ -398,8 +401,14 @@ class GPURBF(object):
         self.g_sdot.free()
         self.g_cls_start.free()
          
+        print self.ctx 
         self.ctx.pop()
+        
+        print self.ctx
         del self.ctx
+        
+        
+        
 
     def predict_init(self, SV):
         """
