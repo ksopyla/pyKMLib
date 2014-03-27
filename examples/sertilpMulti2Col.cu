@@ -21,9 +21,12 @@ __constant__ float GAMMA=0.5f;
 
 #define PREFETCH_SIZE 2
 #define THREAD_PER_ROW 2
-#define LOG_THREADS 1 // LOG2(ThreadPerRow)
+
+// LOG2(ThreadPerRow)
+#define LOG_THREADS 1 
 #define SLICE_SIZE 8
 
+__constant__ int STEP=(THREAD_PER_ROW*SLICE_SIZE);
 
 //cuda kernel function for computing SVM RBF kernel in multi-class scenario with "one vs one" classification scheme, uses 
 // Ellpack-R format for storing sparse matrix, uses ILP - prefetch vector elements in registers
@@ -51,7 +54,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 							   const int * rowLength, 
 							   const int * sliceStart,
 							   const float* selfDot,
-							   const int* y,
+							   const float* y,
 							   float * results,
 							   const int num_rows,
 							   const int align, //SERTILP format align=threadsPerRow*sliceSize
@@ -71,7 +74,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	__shared__ int shYI;
 	__shared__ int shYJ;
 	__shared__ int shClsSum;
-	__shared__ int shSliceStart;
+	//__shared__ int shSliceStart;
 	
 	//shared memory for final reduction for THREAD_PER_ROW for each kernel column
 	__shared__  float shDot[THREAD_PER_ROW*SLICE_SIZE*2];
@@ -81,14 +84,14 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	
 	if(threadIdx.x==0)
 	{
-		shClsSum= cls_count[0]+cls_count[1];
+		shClsSum=num_rows; // cls_count[0]+cls_count[1];
 		shYI = y[idxI];
 		shYJ = y[idxJ];
 		shISelfDot=selfDot[idxI_ds];
 		shJSelfDot=selfDot[idxJ_ds];
 		
-		//TODO:is it correct
-		shSliceStart=sliceStart[blockIdx.x];
+		//TODO:check if is it correct?
+		//shSliceStart=sliceStart[blockIdx.x];
 	}
 	__syncthreads();
 	
@@ -100,7 +103,6 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	int th_mod = t%THREAD_PER_ROW;
 	//determines the class membership, (first cls1_N threads belongs to first class),0 - first class, 1- second class
 	int th_cls = th_group/cls1_N_aligned;
-	
 	
 	//thread offset in particular class
 	int th_cls_offset = th_group - th_cls*(cls1_N_aligned);
@@ -115,9 +117,10 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		int row = th_cls_offset+cls_start[cls_nr];
 		
 		// //slice number, which particular row belongs in
-		// int sliceStartNr = row/SLICE_SIZE;
+		int sliceStartNr = row/SLICE_SIZE;
+		int rowSliceStart=sliceStart[sliceStartNr];
 		// //offset of the row in slice
-		// int sliceOffset = row% SLICE_SIZE;
+		int sliceOffset = row% SLICE_SIZE;
 		
 		float preVals[PREFETCH_SIZE]={0.0};
 		int preColls[PREFETCH_SIZE]={-1};
@@ -142,12 +145,12 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			#pragma unroll
 			for( j=0; j<PREFETCH_SIZE;j++)			
 			{
-				arIdx = (i*PREFETCH_SIZE+j )*align+shSliceStart+threadIdx.x;
-				
-				//the same result like previous one, but less operation
-				//arIdx = (i*PREFETCH_SIZE+j )*align+shSliceStart+sliceOffset*THREAD_PER_ROW+threadIdx.x%THREAD_PER_ROW;
-				preColls[j]=colIdx[ arIdx];
-				preVals[j]=vals[ arIdx];
+				//wrong index
+				//arIdx = (i*PREFETCH_SIZE+j )*align+rowSliceStart+threadIdx.x;
+				//corrected version
+				arIdx = (i*PREFETCH_SIZE+j )*align+rowSliceStart+sliceOffset*THREAD_PER_ROW+threadIdx.x%THREAD_PER_ROW;
+				preColls[j]=colIdx[arIdx];
+				preVals[j]=vals[arIdx];
 			}
 			
 			#pragma unroll
@@ -161,35 +164,42 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		for( j=1; j<PREFETCH_SIZE;j++){
 			dotI[0]+=dotI[j];
 			dotJ[0]+=dotJ[j];
+			// dotI[0]=threadIdx.x;
+			// dotJ[0]=threadIdx.x;
 		}
 		
 		//store i-collumn partial dot result
 		shDot[threadIdx.x] = dotI[0];
 		//store j-collumn partial dot result
-		shDot[threadIdx.x+THREAD_PER_ROW*SLICE_SIZE] = dotJ[0];
+		shDot[threadIdx.x+STEP] = dotJ[0];
 		
 		__syncthreads();
 		
 		for(j=1;j<=LOG_THREADS;j<<=1)
 		{
 			arIdx = 2*j*threadIdx.x;
-			if(arIdx< cls_count[th_cls]){
+			//if(arIdx< (cls_count[th_cls]*THREAD_PER_ROW )){
+			if(arIdx< STEP){
 				shDot[arIdx]+=shDot[arIdx+j];
-				shDot[arIdx+THREAD_PER_ROW*SLICE_SIZE]+=shDot[arIdx+j+THREAD_PER_ROW*SLICE_SIZE];
-				
+				shDot[arIdx+STEP]+=shDot[arIdx+j+STEP];	
 			}
+			
 		}
+		//__syncthreads();
 		
 		if(th_mod==0)
 		{
 			float dI = shDot[threadIdx.x];
-			float dJ = shDot[threadIdx.x+THREAD_PER_ROW*SLICE_SIZE];
+			float dJ = shDot[threadIdx.x+STEP];
 			
 			//index within a subset of two considered class
-			int rIdx = th_cls_offset+th_cls*cls_count[0];
+			int rIdx =th_cls_offset+th_cls*cls_count[0];
 			
 			results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dI));
 			results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*dJ));
+			
+			// results[rIdx]=dI;
+			// results[rIdx+shClsSum]=dJ;
 			
 		}
 		
@@ -216,6 +226,97 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	}
 }
 
+
+//xtern "C" __global__ void rbfSERTILP2multiV2(const float * vals,
+//							   const int * colIdx, 
+//							   const int * rowLength, 
+//							   const int * sliceStart,
+//							   const float* selfDot,
+//							   const int* y,
+//							   float * results,
+//							   const int num_rows,
+//							   const int align, //SERTILP format align=threadsPerRow*sliceSize
+//							   const int idxI,//offset indices in a subproblem
+//							   const int idxJ,
+//							   const int idxI_ds,//true indices in a dataset
+//							   const int idxJ_ds,
+//							   const int cls1_N_aligned, //aligned to power of 2 class 1 size
+//							   const int * cls_start, //pointers where each class starts
+//							   const int * cls_count, //2-element array, number of elements in each class
+//							   const int * cls // 2-element array, with class number eg. cls[0]=2, cls[1]=5, binary classifiers between class 2 vs 5
+//							   )
+//
+//
+//	__shared__ float shISelfDot;
+//	__shared__ float shJSelfDot;
+//	__shared__ int shYI;
+//	__shared__ int shYJ;
+//	__shared__ int shClsSum;
+//	__shared__ int shSliceStart;
+//	
+//	//shared memory for final reduction for THREAD_PER_ROW for each kernel column
+//	__shared__  float shDot[THREAD_PER_ROW*SLICE_SIZE*2];
+//	
+//	shDot[threadIdx.x]=0;
+//	shDot[threadIdx.x+THREAD_PER_ROW*SLICE_SIZE]=0;
+//	
+//	if(threadIdx.x==0)
+//	{
+//		shClsSum= cls_count[0]+cls_count[1];
+//		shYI = y[idxI];
+//		shYJ = y[idxJ];
+//		shISelfDot=selfDot[idxI_ds];
+//		shJSelfDot=selfDot[idxJ_ds];
+//		
+//		//TODO:check if is it correct?
+//		shSliceStart=sliceStart[blockIdx.x];
+//	}
+//	__syncthreads();
+//	
+//	// global thread index
+//	const unsigned int t   = blockDim.x * blockIdx.x + threadIdx.x;  
+//
+//	//thread group number, 
+//	int th_group = t/THREAD_PER_ROW;
+//	int th_mod = t%THREAD_PER_ROW;
+//	//determines the class membership, (first cls1_N threads belongs to first class),0 - first class, 1- second class
+//	int th_cls = th_group/cls1_N_aligned;
+//	
+//	
+//	//thread offset in particular class
+//	int th_cls_offset = th_group - th_cls*(cls1_N_aligned);
+//	//or
+//	//int th_cls_offset = t - th_cls*cls1_N_aligned*THREAD_PER_ROW;
+//	
+//	//
+//	if(th_cls_offset<cls_count[th_cls])
+//	{		
+//		int cls_nr = cls[th_cls];
+//		//true row index in a dataset
+//		int row = th_cls_offset+cls_start[cls_nr];
+//		
+//		// //slice number, which particular row belongs in
+//		int sliceStartNr = row/SLICE_SIZE;
+//		// //offset of the row in slice
+//		// int sliceOffset = row% SLICE_SIZE;
+//		
+//		
+//		
+//		if(th_mod==0)
+//		{
+//					
+//			//index within a subset of two considered class
+//			int rIdx = th_cls_offset+th_cls*cls_count[0];
+//			
+//			results[rIdx]=blockIdx.x;
+//			results[rIdx+num_rows]=sliceStartNr;
+//			
+//			// results[rIdx]=rIdx;
+//			// results[rIdx+shClsSum]=rIdx+shClsSum;
+//			
+//		}
+//	}
+//
 
 
 

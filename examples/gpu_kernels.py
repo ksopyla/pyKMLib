@@ -20,6 +20,7 @@ import pycuda.autoinit
 from pycuda.compiler import SourceModule
 
 import numpy as np
+import scipy.sparse as sp
 
 from sklearn import datasets
     
@@ -33,28 +34,38 @@ import Kernels as ker
 #load and reorganize the dataset
 
 #X, Y = datasets.load_svmlight_file('Data/heart_scale')
-X, Y = datasets.load_svmlight_file('Data/toy_2d_16.train')
+#X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
+X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
+
 #X, Y = datasets.load_svmlight_file('Data/w8a')
+#X=X.astype(np.float32)
+Y=Y.astype(np.float32)
 
 #reorder the dataset and compute class statistics
 cls, idx_cls = np.unique(Y, return_inverse=True)
 #contains mapped class [0,nr_cls-1]
 nr_cls = cls.shape[0] 
-new_classes = np.arange(0,nr_cls)
+new_classes = np.arange(0,nr_cls,dtype=np.int32)
 y_map = new_classes[idx_cls]
 #reorder the dataset, group class together
 order =np.argsort(a=y_map,kind='mergesort')
-X = X[order]
-Y = Y[order]
-count_cls=np.bincount(y_map)
+
+
+
+x=X.todense()
+x=x[order,:]
+X = sp.csr_matrix(x)
+Y=Y[order]
+#print spx.data
+
+count_cls=np.bincount(y_map).astype(np.int32)
 start_cls = count_cls.cumsum()
 start_cls=np.insert(start_cls,0,0)
 
 #---------------------
 
 
-X=X.astype(np.float32)
-Y=Y.astype(np.float32)
+
 
 num_el,dim = X.shape
 gamma = 0.5
@@ -76,7 +87,9 @@ ki =Y[i]*Y* rbf.K_vec(vecI).flatten()
 kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
 
 kij= np.array( [ki,kj]).flatten()
-
+print "Results, RBF"
+print kij.shape, "\n"
+print kij
 
 ##----------------------------------------------
 # Ellpakc gpu kernel
@@ -137,8 +150,10 @@ func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,1,1),g
 
 cuda.memcpy_dtoh(results,g_out)
 
+resultsEll = np.copy(results)
 print "Error Ellpack",np.square(results-kij).sum()
-
+print results.shape, "\n"
+print results
 
 ##------------------------------------------
 # SERTILP gpu kernel
@@ -168,10 +183,17 @@ module = SourceModule(data,keep=True,no_extern_c=True)
 #get module function
 func = module.get_function('rbfSERTILP2multi')
 
-tpb=128#rozmiar bloku, wielokrotnosc 2
-#liczba blokow 
-bpg =int( np.ceil( (threadsPerRow*num_el+0.0)/tpb ))
 
+warp=32
+cls1_n = count_cls[0]
+align_cls1_n =  cls1_n+(warp-cls1_n%warp)%warp
+cls2_n = count_cls[1]
+align_cls2_n =  cls2_n+(warp-cls2_n%warp)%warp 
+
+tpb=sliceSize*threadsPerRow#rozmiar bloku, wielokrotnosc 2
+#liczba blokow 
+bpg =np.ceil(((align_cls1_n+align_cls2_n)*threadsPerRow+0.0)/(tpb))
+bpg=int(bpg)
 #get module texture
 vecI_tex=module.get_texref('VecI_TexRef')
 vecJ_tex=module.get_texref('VecJ_TexRef')
@@ -205,9 +227,7 @@ g_j_ds= np.int32(j)
 
 
 
-warp=32
-align_cls1_n =  cls1_n+(warp-cls1_n%warp)%warp
-align_cls2_n =  cls2_n+(warp-cls2_n%warp)%warp        
+       
 g_cls1N_aligned = np.int32(align_cls1_n)
 
 #gamma copy to constant memory
@@ -216,17 +236,40 @@ cuda.memcpy_htod(g_gamma, np.float32(gamma) )
 
 
 
-g_cls_start = cuda.to_device(np.array(0))
-g_cls_count = cuda.to_device(np.array(0))
-g_cls = cuda.to_device(np.array(0))
+g_cls_start = cuda.to_device(start_cls)
+g_cls_count = cuda.to_device(count_cls)
+g_cls = cuda.to_device(np.array([0,1],dtype=np.int32)  )
 
 
-func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,1,1),grid=(bpg,1),texrefs=texList)
+func(g_val,
+     g_col,
+     g_r,
+     g_slice, 
+     g_self,
+     g_y,
+     g_out,
+     g_num_el,
+     g_align, 
+     g_i,
+     g_j,
+     g_i_ds,
+     g_j_ds,
+     g_cls1N_aligned,
+     g_cls_start,
+     g_cls_count,
+     g_cls,
+     block=(tpb,1,1),grid=(bpg,1),texrefs=texList)
+
+
 
 
 cuda.memcpy_dtoh(results,g_out)
+print "Error SERTILP ",np.square(results-kij).sum()
+print results.shape,"\n"
+print results 
 
-print "Error ",np.square(results-kij).sum()
+print "Ell-sertilp \n"
+print (resultsEll-results).reshape(num_el,2,order='F')
 
-
-
+print "RBF-sertilp \n"
+print (results-kij).reshape(num_el,2,order='F')

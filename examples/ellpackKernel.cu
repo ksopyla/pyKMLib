@@ -115,6 +115,11 @@ extern "C" __global__ void rbfEllpackILPcol2(const float * vals,
 		
 		results[row]=y[row]*shYI*expf(-shGamma*(selfDot[row]+shISelfDot-2*dotI[0]));
 		results[row+shRows]=y[row]*shYJ*expf(-shGamma*(selfDot[row]+shJSelfDot-2*dotJ[0]));
+		
+		
+		// results[row]=dotI[0];
+		// results[row+shRows]=dotJ[0];
+		
 		//float yRow = y[row];
 		//float selfDotRow = selfDot[row];
 		//results[row]= yRow*shYI*expf(-shGamma*(selfDotRow+shISelfDot-2*dotI[0]));

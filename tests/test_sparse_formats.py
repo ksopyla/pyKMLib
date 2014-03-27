@@ -42,6 +42,8 @@ class TestSparseFormats(unittest.TestCase):
         col_vs_right = np.array([1,3,1,3,4,5,6,0,5,0,0,0,0,0,0,0,1,3,1,3,4,5,6,0,5,0,0,0,0,0,0,0])
         #but in sparse format collumns start from 0  so we have to substract 1      
         col_right = col_vs_right-1
+        col_right[col_right==-1]=0
+        
         
         X, Y = datasets.load_svmlight_file('8test_data.txt')
         

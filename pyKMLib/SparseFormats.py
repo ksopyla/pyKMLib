@@ -188,23 +188,23 @@ def csr2sertilp(spmat, threadsPerRow=2, prefetch=2, sliceSize=64,minAlign=64):
     rowLen = np.diff(spmat.indptr)
     #row lenghts divided by number of threads assign to each row and 
     #number of fetchs done by one thread 
-    rowLen = np.ceil(1.0*rowLen/(threadsPerRow*prefetch))
+    rowLen = np.ceil(1.0*rowLen/(threadsPerRow*prefetch)).astype(np.int32,copy=False)
 
     #compute max nnz in each slice
     rowDiff=np.diff(spmat.indptr)
-    shapeSlice = (np.ceil(rows/sliceSize),sliceSize)
+    shapeSlice = (numSlices,sliceSize)
     #resize and fill with zeros if necessary
     rowDiff.resize(shapeSlice)
     #get max values
     maxInSlice = np.max(rowDiff,axis=1)
         
     maxInSlice=np.ceil(1.0*maxInSlice/(prefetch*threadsPerRow))*prefetch*align   
-    slice_start=np.insert(np.cumsum(maxInSlice),0,0)
+    slice_start=np.insert(np.cumsum(maxInSlice),0,0).astype(np.int32,copy=False)
 
     
     nnzEl = slice_start[numSlices]
     values = np.zeros(nnzEl,dtype=np.float32)
-    colIdx = -1*np.ones(nnzEl,dtype=np.int32)
+    colIdx = np.zeros(nnzEl,dtype=np.int32) #-1*np.ones(nnzEl,dtype=np.int32)
     
     for i in xrange(rows):
         

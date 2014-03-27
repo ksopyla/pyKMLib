@@ -104,8 +104,8 @@ class GPUSVM2Col(object):
             
             #init kernel for each class pair in group
             for pair in group:
-                i=pair[0]
-                j=pair[1]
+                i=pair[0] #first class number
+                j=pair[1] #second class number
                 s_i,e_i=self.start_cls[i], self.start_cls[i+1]
                 s_j,e_j=self.start_cls[j], self.start_cls[j+1]
                 
