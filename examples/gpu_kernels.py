@@ -19,6 +19,7 @@ import pycuda.driver as cuda
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
 
+import sys
 import numpy as np
 import scipy.sparse as sp
 
@@ -88,15 +89,11 @@ vecJ = X[j,:].toarray()
 import time
 t0=time.clock()
 
-ki =Y[i]*Y* rbf.K_vec(vecI)
-kj =Y[j]*Y*rbf.K_vec(vecJ)
+ki =Y[i]*Y* rbf.K_vec(vecI).flatten()
+kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
 
 t1=time.clock()
 print '\nRBF takes',t1-t0, 's'
-
-ki =ki.flatten()
-kj =kj.flatten()
-
 
 kij= np.array( [ki,kj]).flatten()
 print "Results, RBF"
