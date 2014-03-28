@@ -92,7 +92,7 @@ ki =Y[i]*Y* rbf.K_vec(vecI)
 kj =Y[j]*Y*rbf.K_vec(vecJ)
 
 t1=time.clock()
-print '\nRBF takes',t1-t0
+print '\nRBF takes',t1-t0, 's'
 
 ki =ki.flatten()
 kj =kj.flatten()
@@ -100,7 +100,7 @@ kj =kj.flatten()
 
 kij= np.array( [ki,kj]).flatten()
 print "Results, RBF"
-#print kij
+print kij.shape
 
 ##----------------------------------------------
 # Ellpakc gpu kernel
@@ -166,13 +166,17 @@ func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,1,1),g
 stop_event.record()
 stop_event.synchronize()
 cuTime=stop_event.time_since(start_event)
-print "Ellpack time ",cuTime
+
 
 cuda.memcpy_dtoh(results,g_out)
 
 resultsEll = np.copy(results)
-print "Error Ellpack",np.square(results-kij).sum()
+
+print "Ellpack ----- \n"
 print results.shape, "\n"
+print "Ellpack time ",cuTime
+print "Error:",np.square(results-kij).sum()
+
 #print results
 
 ##------------------------------------------
@@ -290,16 +294,19 @@ stop_event.record()
 stop_event.synchronize()
 
 cuTime=stop_event.time_since(start_event)
-print "Sertipl time ",cuTime
+
 
 
 cuda.memcpy_dtoh(results,g_out)
-print "Error SERTILP ",np.square(results-kij).sum()
+print 'SERTILP----- \n'
 print results.shape,"\n"
+print "Sertipl time ",cuTime
+print "Error:",np.square(results-kij).sum()
+
 #print results 
 
-print "Ell-sertilp \n"
+#print "Ell-sertilp \n"
 #print (resultsEll-results).reshape(num_el,2,order='F')
 
-print "RBF-sertilp \n"
+#print "RBF-sertilp \n"
 #print (results-kij).reshape(num_el,2,order='F')
