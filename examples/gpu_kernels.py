@@ -35,8 +35,9 @@ import Kernels as ker
 
 #X, Y = datasets.load_svmlight_file('Data/heart_scale')
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
-X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
+#X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
 
+X, Y = datasets.load_svmlight_file('Data/a9a',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/w8a')
 #X=X.astype(np.float32)
 Y=Y.astype(np.float32)
@@ -83,13 +84,23 @@ i=0
 j=2
 vecI = X[i,:].toarray()
 vecJ = X[j,:].toarray()
-ki =Y[i]*Y* rbf.K_vec(vecI).flatten()
-kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
+
+import time
+t0=time.clock()
+
+ki =Y[i]*Y* rbf.K_vec(vecI)
+kj =Y[j]*Y*rbf.K_vec(vecJ)
+
+t1=time.clock()
+print '\nRBF takes',t1-t0
+
+ki =ki.flatten()
+kj =kj.flatten()
+
 
 kij= np.array( [ki,kj]).flatten()
 print "Results, RBF"
-print kij.shape, "\n"
-print kij
+#print kij
 
 ##----------------------------------------------
 # Ellpakc gpu kernel
@@ -145,15 +156,24 @@ g_num_el = np.int32(num_el)
 g_i = np.int32(i)
 g_j = np.int32(j)
 g_gamma = np.float32(gamma)
+
+start_event = cuda.Event()
+stop_event = cuda.Event()
+start_event.record()
+
 func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,1,1),grid=(bpg,1),texrefs=texList)
 
+stop_event.record()
+stop_event.synchronize()
+cuTime=stop_event.time_since(start_event)
+print "Ellpack time ",cuTime
 
 cuda.memcpy_dtoh(results,g_out)
 
 resultsEll = np.copy(results)
 print "Error Ellpack",np.square(results-kij).sum()
 print results.shape, "\n"
-print results
+#print results
 
 ##------------------------------------------
 # SERTILP gpu kernel
@@ -241,6 +261,11 @@ g_cls_count = cuda.to_device(count_cls)
 g_cls = cuda.to_device(np.array([0,1],dtype=np.int32)  )
 
 
+start_event = cuda.Event()
+stop_event = cuda.Event()
+
+start_event.record()
+
 func(g_val,
      g_col,
      g_r,
@@ -260,16 +285,21 @@ func(g_val,
      g_cls,
      block=(tpb,1,1),grid=(bpg,1),texrefs=texList)
 
+stop_event.record()
 
+stop_event.synchronize()
+
+cuTime=stop_event.time_since(start_event)
+print "Sertipl time ",cuTime
 
 
 cuda.memcpy_dtoh(results,g_out)
 print "Error SERTILP ",np.square(results-kij).sum()
 print results.shape,"\n"
-print results 
+#print results 
 
 print "Ell-sertilp \n"
-print (resultsEll-results).reshape(num_el,2,order='F')
+#print (resultsEll-results).reshape(num_el,2,order='F')
 
 print "RBF-sertilp \n"
-print (results-kij).reshape(num_el,2,order='F')
+#print (results-kij).reshape(num_el,2,order='F')
