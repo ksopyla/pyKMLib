@@ -264,8 +264,8 @@ g_cls_count = cuda.to_device(count_cls)
 g_cls = cuda.to_device(np.array([0,1],dtype=np.int32)  )
 
 
-start_event = cuda.Event()
-stop_event = cuda.Event()
+#start_event = cuda.Event()
+#stop_event = cuda.Event()
 
 start_event.record()
 
