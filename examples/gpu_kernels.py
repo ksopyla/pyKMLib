@@ -16,6 +16,7 @@ Mainly it demostrates the usage of pycuda.
 
 
 import pycuda.driver as cuda
+import pycuda.tools
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
 
@@ -158,11 +159,11 @@ g_gamma = np.float32(gamma)
 
 start_event = cuda.Event()
 stop_event = cuda.Event()
+
 start_event.record()
-
 func(g_val,g_col,g_r,g_self,g_y,g_out,g_num_el,g_i,g_j,g_gamma,block=(tpb,1,1),grid=(bpg,1),texrefs=texList)
-
 stop_event.record()
+
 stop_event.synchronize()
 cuTime=stop_event.time_since(start_event)
 
@@ -200,6 +201,8 @@ kernel_file = "sertilpMulti2Col.cu"
 
 with open (kernel_file,"r") as CudaFile:
     data = CudaFile.read();
+    
+import pycuda.autoinit    
 #compile module
 #module = SourceModule(data,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
 module = SourceModule(data,keep=True,no_extern_c=True)
