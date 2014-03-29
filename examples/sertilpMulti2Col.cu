@@ -183,9 +183,9 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 				shDot[arIdx]+=shDot[arIdx+j];
 				shDot[arIdx+STEP]+=shDot[arIdx+j+STEP];	
 			}
-			
+			__syncthreads();
 		}
-		//__syncthreads();
+		//
 		
 		if(th_mod==0)
 		{
