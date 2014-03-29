@@ -180,10 +180,10 @@ print "Error:",np.square(results-kij).sum()
 # SERTILP gpu kernel
 
 
-sliceSize=8
+sliceSize=64 #8
 threadsPerRow=2
 prefetch=2
-minAlign=8
+minAlign=64 #8
 v,c,r,ss=spf.csr2sertilp(X,
                          threadsPerRow=threadsPerRow, 
                          prefetch=prefetch, 
@@ -297,8 +297,11 @@ cuTime=stop_event.time_since(start_event)
 cuda.memcpy_dtoh(results,g_out)
 print 'SERTILP----- \n'
 print results.shape,"\n"
-print "Sertipl time ",cuTime
+print "SERTILP time ",cuTime
 print "Error:",np.square(results-kij).sum()
+
+err=results-kij
+print np.where( np.abs(err)>0.01)
 
 #print results 
 
