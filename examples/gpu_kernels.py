@@ -87,12 +87,14 @@ vecI = X[i,:].toarray()
 vecJ = X[j,:].toarray()
 
 import time
-t0=time.clock()
+#t0=time.clock()
+t0=time.time()
 
 ki =Y[i]*Y* rbf.K_vec(vecI).flatten()
 kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
 
-t1=time.clock()
+#t1=time.clock()
+t1=time.time()
 print '\nRBF takes',t1-t0, 's'
 
 kij= np.array( [ki,kj]).flatten()
@@ -171,7 +173,7 @@ resultsEll = np.copy(results)
 
 print "Ellpack ----- \n"
 print results.shape, "\n"
-print "Ellpack time ",cuTime
+print "Ellpack time ",cuTime*1e-3
 print "Error:",np.square(results-kij).sum()
 
 #print results
@@ -297,7 +299,7 @@ cuTime=stop_event.time_since(start_event)
 cuda.memcpy_dtoh(results,g_out)
 print 'SERTILP----- \n'
 print results.shape,"\n"
-print "SERTILP time ",cuTime
+print "SERTILP time ",cuTime*1e-3
 print "Error:",np.square(results-kij).sum()
 
 err=results-kij
