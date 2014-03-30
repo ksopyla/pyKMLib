@@ -201,8 +201,7 @@ kernel_file = "sertilpMulti2Col.cu"
 
 with open (kernel_file,"r") as CudaFile:
     data = CudaFile.read();
-    
-import pycuda.autoinit    
+       
 #compile module
 #module = SourceModule(data,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
 module = SourceModule(data,keep=True,no_extern_c=True)
@@ -306,9 +305,12 @@ print "SERTILP time ",cuTime*1e-3
 print "Error:",np.square(results-kij).sum()
 
 err=results-kij
-errIdx=np.where( np.abs(err)>0.001)
+errIdx=np.where( np.abs(err)>0.0001)
 print errIdx[0].shape
 print errIdx
+
+
+print np.array([results[errIdx],resultsEll[errIdx], kij[errIdx] ]).T
 
 print "2*count_cls[0]+count_cls[1]=",2*count_cls[0]+count_cls[1]
 
