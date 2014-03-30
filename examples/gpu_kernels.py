@@ -10,7 +10,7 @@ Created on Mon Dec 30 13:18:51 2013
 
 
 """
-Mainly it demostrates the usage of pycuda.
+It demostrates the usage of pycuda.
 
 """
 
@@ -20,7 +20,6 @@ import pycuda.tools
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
 
-import sys
 import numpy as np
 import scipy.sparse as sp
 
@@ -35,13 +34,13 @@ import Kernels as ker
 
 #load and reorganize the dataset
 
-#X, Y = datasets.load_svmlight_file('Data/heart_scale')
+
+#dsName = 'Data/glass.scale_binary'
+dsName ='Data/a9a'
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
 
-X, Y = datasets.load_svmlight_file('Data/a9a',dtype=np.float32)
-#X, Y = datasets.load_svmlight_file('Data/w8a')
-#X=X.astype(np.float32)
+X, Y = datasets.load_svmlight_file(dsName,dtype=np.float32)
 Y=Y.astype(np.float32)
 
 #reorder the dataset and compute class statistics

@@ -41,3 +41,4 @@ nvcc_cache/*
 .SyncID
 .SyncIgnore
 .spyderproject
+examples/Data/mnist*
