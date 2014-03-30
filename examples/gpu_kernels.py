@@ -306,7 +306,11 @@ print "SERTILP time ",cuTime*1e-3
 print "Error:",np.square(results-kij).sum()
 
 err=results-kij
-print np.where( np.abs(err)>0.0001)
+errIdx=np.where( np.abs(err)>0.001)
+print errIdx[0].shape
+print errIdx
+
+print "2*count_cls[0]+count_cls[1]=",2*count_cls[0]+count_cls[1]
 
 #print results 
 
