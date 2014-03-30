@@ -79,8 +79,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	//shared memory for final reduction for THREAD_PER_ROW for each kernel column
 	__shared__  float shDot[THREAD_PER_ROW*SLICE_SIZE*2];
 	
-	shDot[threadIdx.x]=0;
-	shDot[threadIdx.x+THREAD_PER_ROW*SLICE_SIZE]=0;
+	shDot[threadIdx.x]=0.0f;
+	shDot[threadIdx.x+THREAD_PER_ROW*SLICE_SIZE]=0.0f;
 	
 	if(threadIdx.x==0)
 	{
@@ -183,6 +183,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 				shDot[arIdx]+=shDot[arIdx+j];
 				shDot[arIdx+STEP]+=shDot[arIdx+j+STEP];	
 			}
+			//todo: check if necessary
 			__syncthreads();
 		}
 		//
@@ -198,8 +199,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dI));
 			results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*dJ));
 			
-			// results[rIdx]=dI;
-			// results[rIdx+shClsSum]=dJ;
+			results[rIdx]=dI;
+			results[rIdx+shClsSum]=dJ;
 			
 		}
 		

@@ -98,8 +98,8 @@ extern "C" __global__ void rbfEllpackILPcol2(const float * vals,
 				//dot[0][j]+=preVals[j]*tex1Dfetch(VecI_TexRef,preColls[j]);
 				//dot[1][j]+=preVals[j]*tex1Dfetch(VecJ_TexRef,preColls[j]);
 				
-				dotI[j]+=preVals[j]*tex1Dfetch(VecI_TexRef,preColls[j]);
-				dotJ[j]+=preVals[j]*tex1Dfetch(VecJ_TexRef,preColls[j]);
+				dotI[j]+=preVals[j];//*tex1Dfetch(VecI_TexRef,preColls[j]);
+				dotJ[j]+=preVals[j];//*tex1Dfetch(VecJ_TexRef,preColls[j]);
 
 			}
 			
@@ -117,8 +117,8 @@ extern "C" __global__ void rbfEllpackILPcol2(const float * vals,
 		results[row+shRows]=y[row]*shYJ*expf(-shGamma*(selfDot[row]+shJSelfDot-2*dotJ[0]));
 		
 		
-		// results[row]=dotI[0];
-		// results[row+shRows]=dotJ[0];
+		results[row]=dotI[0];
+		results[row+shRows]=dotJ[0];
 		
 		//float yRow = y[row];
 		//float selfDotRow = selfDot[row];
@@ -128,6 +128,9 @@ extern "C" __global__ void rbfEllpackILPcol2(const float * vals,
 	}	
 
 }
+
+
+
 
 
 extern "C" __global__ void rbfEllpackILPcol2_Prefetch2(const float * vals,
