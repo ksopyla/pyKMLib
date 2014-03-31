@@ -126,7 +126,7 @@ g_out = cuda.to_device(results)
 #compile module
 #module = SourceModule(data,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
 
-module = SourceModule(data,keep=True,no_extern_c=True)
+module = SourceModule(data,keep=True,no_extern_c=True,options=["--ptxas-options=-v"])
 
 #get module function
 func = module.get_function('rbfEllpackILPcol2')
@@ -201,7 +201,7 @@ with open (kernel_file,"r") as CudaFile:
        
 #compile module
 #module = SourceModule(data,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
-module = SourceModule(data,keep=True,no_extern_c=True)
+module = SourceModule(data,keep=True,no_extern_c=True,options=["--ptxas-options=-v"])
 #get module function
 func = module.get_function('rbfSERTILP2multi')
 
