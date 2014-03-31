@@ -36,7 +36,7 @@ import Kernels as ker
 
 
 #dsName = 'Data/glass.scale_binary'
-dsName ='Data/a9a'
+dsName ='Data/w8a'
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
 
