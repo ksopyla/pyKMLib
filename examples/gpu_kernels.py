@@ -95,11 +95,10 @@ kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
 
 #t1=time.clock()
 t1=time.time()
-print '\nRBF takes',t1-t0, 's'
 
+print 'CPU RBF takes',t1-t0, 's'
 kij= np.array( [ki,kj]).flatten()
-print "Results, RBF"
-print kij.shape
+print kij[0:1000:200]
 
 ##----------------------------------------------
 # Ellpakc gpu kernel
@@ -171,11 +170,10 @@ cuda.memcpy_dtoh(results,g_out)
 
 resultsEll = np.copy(results)
 
-print "Ellpack ----- \n"
-print results.shape, "\n"
-print "Ellpack time ",cuTime*1e-3
-print "Error:",np.square(results-kij).sum()
 
+print "\nEllpack time ",cuTime*1e-3
+print "Error to CPU:",np.square(resultsEll-kij).sum()
+print resultsEll[0:1000:200]
 #print results
 
 ##------------------------------------------
@@ -300,22 +298,14 @@ cuTime=stop_event.time_since(start_event)
 cuda.memcpy_dtoh(results,g_out)
 
 
-print 'SERTILP----- \n'
-print results.shape,"\n"
-print "SERTILP time ",cuTime*1e-3
-print "Error:",np.square(results-resultsEll).sum()
+print "\nSERTILP time ",cuTime*1e-3
+print "Error to CPU:",np.square(results-kij).sum()
+print "Error to ELlpack:",np.square(results-resultsEll).sum()
+print results[0:1000:200]
 
-err=results-resultsEll
-errIdx=np.where( np.abs(err)>0.0001)
-print errIdx[0].shape
-print errIdx
-
-print np.array([results[errIdx],resultsEll[errIdx]]).T
-
-#print results 
-
-#print "Ell-sertilp \n"
-#print (resultsEll-results).reshape(num_el,2,order='F')
-
-#print "RBF-sertilp \n"
-#print (results-kij).reshape(num_el,2,order='F')
+#err=results-resultsEll
+#errIdx=np.where( np.abs(err)>0.0001)
+#print errIdx[0].shape
+#print errIdx
+#
+#print np.array([results[errIdx],resultsEll[errIdx]]).T
