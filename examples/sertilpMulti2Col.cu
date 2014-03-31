@@ -24,7 +24,7 @@ __constant__ float GAMMA=0.5f;
 
 // LOG2(ThreadPerRow)
 #define LOG_THREADS 1 
-#define SLICE_SIZE 32
+#define SLICE_SIZE 64
 
 __constant__ int STEP=(THREAD_PER_ROW*SLICE_SIZE);
 
@@ -155,8 +155,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			
 			#pragma unroll
 			for( j=0; j<PREFETCH_SIZE;j++){
-				dotI[j]+=preVals[j];//preVals[j]*tex1Dfetch(VecI_TexRef,preColls[j]);
-				dotJ[j]+=preVals[j];//preVals[j]*tex1Dfetch(VecJ_TexRef,preColls[j]);
+				dotI[j]+=preVals[j]*tex1Dfetch(VecI_TexRef,preColls[j]);
+				dotJ[j]+=preVals[j]*tex1Dfetch(VecJ_TexRef,preColls[j]);
 			}
 		}
 		
@@ -199,8 +199,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dI));
 			results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*dJ));
 			
-			results[rIdx]=dI;
-			results[rIdx+shClsSum]=dJ;
+			// results[rIdx]=dI;
+			// results[rIdx+shClsSum]=dJ;
 			
 		}
 		

@@ -182,7 +182,7 @@ print "Error:",np.square(results-kij).sum()
 # SERTILP gpu kernel
 
 
-sliceSize=32 #8
+sliceSize=64 #8
 threadsPerRow=2
 prefetch=2
 minAlign=64 #8
@@ -208,7 +208,7 @@ module = SourceModule(data,keep=True,no_extern_c=True)
 func = module.get_function('rbfSERTILP2multi')
 
 
-warp=32
+warp=sliceSize#32
 cls1_n = count_cls[0]
 align_cls1_n =  cls1_n+(warp-cls1_n%warp)%warp
 cls2_n = count_cls[1]
@@ -310,17 +310,8 @@ errIdx=np.where( np.abs(err)>0.0001)
 print errIdx[0].shape
 print errIdx
 
-
 print np.array([results[errIdx],resultsEll[errIdx]]).T
 
-print "2*count_cls[0]+count_cls[1]=",2*count_cls[0]+count_cls[1]
-
-
-print start_cls.dtype
-print start_cls
-cuda.memcpy_dtoh(start_cls,g_cls_start)
-print start_cls.dtype
-print start_cls
 #print results 
 
 #print "Ell-sertilp \n"
