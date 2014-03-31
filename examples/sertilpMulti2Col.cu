@@ -164,8 +164,6 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		for( j=1; j<PREFETCH_SIZE;j++){
 			dotI[0]+=dotI[j];
 			dotJ[0]+=dotJ[j];
-			// dotI[0]=threadIdx.x;
-			// dotJ[0]=threadIdx.x;
 		}
 		
 		//store i-collumn partial dot result

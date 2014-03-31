@@ -95,8 +95,8 @@ extern "C" __global__ void rbfEllpackILPcol2(const float * vals,
 			
 			#pragma unroll
 			for( j=0; j<PREFETCH_SIZE;j++){			
-				dotI[j]+=preVals[j];//*tex1Dfetch(VecI_TexRef,preColls[j]);
-				dotJ[j]+=preVals[j];//*tex1Dfetch(VecJ_TexRef,preColls[j]);
+				dotI[j]+=preVals[j]*tex1Dfetch(VecI_TexRef,preColls[j]);
+				dotJ[j]+=preVals[j]*tex1Dfetch(VecJ_TexRef,preColls[j]);
 
 			}
 			
