@@ -24,7 +24,7 @@ __constant__ float GAMMA=0.5f;
 
 // LOG2(ThreadPerRow)
 #define LOG_THREADS 1 
-#define SLICE_SIZE 128 
+#define SLICE_SIZE 64 
 
 __constant__ int STEP=(THREAD_PER_ROW*SLICE_SIZE);
 
