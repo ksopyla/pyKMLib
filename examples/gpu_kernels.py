@@ -180,7 +180,7 @@ print resultsEll[0:1000:200]
 # SERTILP gpu kernel
 
 
-sliceSize=64 #8
+sliceSize=128 #8
 threadsPerRow=2
 prefetch=2
 minAlign=64 #8

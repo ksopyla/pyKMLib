@@ -1,0 +1,26 @@
+CUDA Debug - Linux
+
+cuda-gdb --args python -m pycuda.debug demo.py
+
+Default pyCuda compile file: kernel.cu
+
+cuda-gdb commands:
+(b) break function_name
+break kernel.cu:line_numer (eg. kernel.cu:108)
+
+(r) run - run program
+(c) continu - continou to next breakpoint
+(n) next - next line
+
+info cuda threads
+info cuda blocks
+
+cuda block 123 thread 5 - switch to block 123 and thread 5
+
+
+print myVar
+print myArray
+
+CUDA Profile
+
+CUDA_PROFILE=1 python scriptname.py
