@@ -96,11 +96,13 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	__syncthreads();
 	
 	// global thread index
-	const unsigned int t   = blockDim.x * blockIdx.x + threadIdx.x;  
+	//const unsigned int t   = blockDim.x * blockIdx.x + threadIdx.x;  
 
+	const unsigned int th_group    = (blockDim.x * blockIdx.x + threadIdx.x)/THREAD_PER_ROW;  
 	//thread group number, 
-	int th_group = t/THREAD_PER_ROW;
-	int th_mod = t%THREAD_PER_ROW;
+	//int th_group = t/THREAD_PER_ROW;
+	//int th_mod = t%THREAD_PER_ROW;
+	//const unsigned int th_mod    = (blockDim.x * blockIdx.x + threadIdx.x)%THREAD_PER_ROW;  
 	//determines the class membership, (first cls1_N threads belongs to first class),0 - first class, 1- second class
 	int th_cls = th_group/cls1_N_aligned;
 	
@@ -112,15 +114,17 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	//
 	if(th_cls_offset<cls_count[th_cls])
 	{		
-		int cls_nr = cls[th_cls];
+		//int cls_nr = cls[th_cls];
 		//true row index in a dataset
-		int row = th_cls_offset+cls_start[cls_nr];
-		
+		//int row = th_cls_offset+cls_start[cls_nr];
+		int row = th_cls_offset+cls_start[cls[th_cls]];
+
 		// //slice number, which particular row belongs in
-		int sliceStartNr = row/SLICE_SIZE;
-		int rowSliceStart=sliceStart[sliceStartNr];
+		//int sliceStartNr = row/SLICE_SIZE;
+		//int rowSliceStart=sliceStart[sliceStartNr];
+		//int rowSliceStart=sliceStart[row/SLICE_SIZE];
 		// //offset of the row in slice
-		int sliceOffset = row% SLICE_SIZE;
+		//int sliceOffset = row% SLICE_SIZE;
 		
 		float preVals[PREFETCH_SIZE]={0.0};
 		int preColls[PREFETCH_SIZE]={-1};
@@ -148,7 +152,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 				//wrong index
 				//arIdx = (i*PREFETCH_SIZE+j )*align+rowSliceStart+threadIdx.x;
 				//corrected version
-				arIdx = (i*PREFETCH_SIZE+j )*align+rowSliceStart+sliceOffset*THREAD_PER_ROW+threadIdx.x%THREAD_PER_ROW;
+				//arIdx = (i*PREFETCH_SIZE+j )*align+rowSliceStart+sliceOffset*THREAD_PER_ROW+threadIdx.x%THREAD_PER_ROW;
+				arIdx = (i*PREFETCH_SIZE+j )*align+sliceStart[row/SLICE_SIZE]+( row% SLICE_SIZE)*THREAD_PER_ROW+threadIdx.x%THREAD_PER_ROW;
 				preColls[j]=colIdx[arIdx];
 				preVals[j]=vals[arIdx];
 			}
@@ -185,20 +190,20 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			__syncthreads();
 		}
 		//
-		
-		if(th_mod==0)
+		//if(th_mod==0)
+		if(threadIdx.x%THREAD_PER_ROW==0)
 		{
-			float dI = shDot[threadIdx.x];
-			float dJ = shDot[threadIdx.x+STEP];
+			//float dI = shDot[threadIdx.x];
+			//float dJ = shDot[threadIdx.x+STEP];
 			
 			//index within a subset of two considered class
-			int rIdx =th_cls_offset+th_cls*cls_count[0];
+			//int rIdx =th_cls_offset+th_cls*cls_count[0];
 			
-			results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dI));
-			results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*dJ));
+			results[row]=y[row]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*shDot[threadIdx.x]));
+			results[row+shClsSum]=y[row]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*shDot[threadIdx.x+STEP]));
 			
-			// results[rIdx]=dI;
-			// results[rIdx+shClsSum]=dJ;
+			// results[row]=dI;
+			// results[row+shClsSum]=dJ;
 			
 		}
 		
@@ -218,10 +223,10 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 		}
 		*/
 		
-		//int rIdx = th_cls_offset+th_cls*cls_count[0];
+		//int row = th_cls_offset+th_cls*cls_count[0];
 		////rbf
-		//results[rIdx]=y[rIdx]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dotI[0]));
-		//results[rIdx+shClsSum]=y[rIdx]*shYJ*expf(-GAMMA*(selfDot[rowOW]+shJSelfDot-2*dotJ[0]));
+		//results[row]=y[row]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dotI[0]));
+		//results[row+shClsSum]=y[row]*shYJ*expf(-GAMMA*(selfDot[rowOW]+shJSelfDot-2*dotJ[0]));
 	}
 }
 
@@ -305,13 +310,13 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 //		{
 //					
 //			//index within a subset of two considered class
-//			int rIdx = th_cls_offset+th_cls*cls_count[0];
+//			int row = th_cls_offset+th_cls*cls_count[0];
 //			
-//			results[rIdx]=blockIdx.x;
-//			results[rIdx+num_rows]=sliceStartNr;
+//			results[row]=blockIdx.x;
+//			results[row+num_rows]=sliceStartNr;
 //			
-//			// results[rIdx]=rIdx;
-//			// results[rIdx+shClsSum]=rIdx+shClsSum;
+//			// results[row]=row;
+//			// results[row+shClsSum]=row+shClsSum;
 //			
 //		}
 //	}
