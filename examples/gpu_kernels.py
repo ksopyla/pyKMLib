@@ -62,7 +62,7 @@ Y=Y[order]
 
 count_cls=np.bincount(y_map).astype(np.int32)
 start_cls = count_cls.cumsum()
-start_cls=np.insert(start_cls,0,0)
+start_cls=np.insert(start_cls,0,0).astype(np.int32)
 
 #---------------------
 
@@ -182,7 +182,7 @@ print "Error:",np.square(results-kij).sum()
 # SERTILP gpu kernel
 
 
-sliceSize=64 #8
+sliceSize=32 #8
 threadsPerRow=2
 prefetch=2
 minAlign=64 #8
@@ -298,6 +298,8 @@ cuTime=stop_event.time_since(start_event)
 
 
 cuda.memcpy_dtoh(results,g_out)
+
+
 print 'SERTILP----- \n'
 print results.shape,"\n"
 print "SERTILP time ",cuTime*1e-3
@@ -313,6 +315,12 @@ print np.array([results[errIdx],resultsEll[errIdx]]).T
 
 print "2*count_cls[0]+count_cls[1]=",2*count_cls[0]+count_cls[1]
 
+
+print start_cls.dtype
+print start_cls
+cuda.memcpy_dtoh(start_cls,g_cls_start)
+print start_cls.dtype
+print start_cls
 #print results 
 
 #print "Ell-sertilp \n"
