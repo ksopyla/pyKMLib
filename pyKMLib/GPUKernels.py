@@ -2,7 +2,7 @@
 """
 Created on Sun Mar 16 15:40:41 2014
 
-@author: Krszysztof Sopyła
+@author: Krzysztof Sopyła
 @email: krzysztofsopyla@gmail.com
 @license: MIT
 """

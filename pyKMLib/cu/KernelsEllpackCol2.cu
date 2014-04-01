@@ -64,7 +64,7 @@ extern "C" __global__ void rbfEllpackILPcol2multi(const float * vals,
 	const unsigned int t   = blockDim.x * blockIdx.x + threadIdx.x;  // global thread index
 		
 	//thread class map, 0 - first class, 1- second class
-	int th_cls = (t/cls1_N_aligned) ;//>0 ? 1:0;
+	int th_cls = (t/cls1_N_aligned)>0 ? 1:0;
 	int th_cls_offset = t-th_cls*cls1_N_aligned;
 	
 	//int cls_sum=cls_count[0]+cls_count[1]; //=shClsSum
