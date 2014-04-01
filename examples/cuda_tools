@@ -1,4 +1,5 @@
 CUDA Debug - Linux
+============================
 
 cuda-gdb --args python -m pycuda.debug demo.py
 
@@ -21,6 +22,12 @@ cuda block 123 thread 5 - switch to block 123 and thread 5
 print myVar
 print myArray
 
-CUDA Profile
+
+CUDA memcheck
+----------------
+
+cuda-memcheck python -m pycuda.debug <my_pycuda_code.py>
+
+==================
 
 CUDA_PROFILE=1 python scriptname.py
