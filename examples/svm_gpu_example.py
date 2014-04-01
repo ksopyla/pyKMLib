@@ -35,12 +35,12 @@ from sklearn import datasets
 #Y = iris.target
 
 # multiclass 
-#X, Y = datasets.load_svmlight_file('Data/glass.scale.txt')
+X, Y = datasets.load_svmlight_file('Data/glass.scale.txt')
 #X, Y = datasets.load_svmlight_file('glass.scale_3cls.txt')
 
 #binary
 #X, Y = datasets.load_svmlight_file('glass.scale_binary')
-X, Y = datasets.load_svmlight_file('Data/heart_scale')
+#X, Y = datasets.load_svmlight_file('Data/heart_scale')
 #X, Y = datasets.load_svmlight_file('Data/w8a')
 #X, Y = datasets.load_svmlight_file('toy_2d_16.train')
 
@@ -53,7 +53,7 @@ gamma=1.0 #RBF kernel gamma parameter
 
 svm_solver = gslv.GPUSVM2Col(X,Y,C)
 #kernel = Linear()
-kernel = gker.GPURBF(gamma=gamma)
+kernel = gker.GPURBFEll(gamma=gamma)
 
 #init the classifier, mainly it inits the cuda module and transform data into 
 #particular format
@@ -100,30 +100,30 @@ print 'acc=',acc
 #libsvm from sklearn
 from sklearn import svm
 
-#clf = svm.SVC(C=C,kernel='linear',verbose=True)
-#clf = svm.SVC(C=C,kernel='rbf',gamma=gamma,verbose=True)
-#t0=time.clock()
-#svm_m= clf.fit(X,Y)
-#t1=time.clock()
-##
-#print '\nTrains Takes: ', t1-t0
-##print 'alpha\n',clf.dual_coef_.toarray()
+clf = svm.SVC(C=C,kernel='linear',verbose=True)
+clf = svm.SVC(C=C,kernel='rbf',gamma=gamma,verbose=True)
+t0=time.clock()
+svm_m= clf.fit(X,Y)
+t1=time.clock()
 #
-##print 'nSV=',clf.n_support_
-##print 'sv \n',clf.support_vectors_.toarray()
-##print 'sv idx=',clf.support_
-#
-#
-#t0=time.clock()
-#pred1 = clf.predict(X)
-#t1=time.clock()
-#print '\nPredict Takes: ', t1-t0
-##print pred1
-#acc = (0.0+sum(Y==pred1))/len(Y)
-#
-#print 'acc=',acc
-#
-#print '--------------\n'
+print '\nTrains Takes: ', t1-t0
+#print 'alpha\n',clf.dual_coef_.toarray()
+
+#print 'nSV=',clf.n_support_
+#print 'sv \n',clf.support_vectors_.toarray()
+#print 'sv idx=',clf.support_
+
+
+t0=time.clock()
+pred1 = clf.predict(X)
+t1=time.clock()
+print '\nPredict Takes: ', t1-t0
+#print pred1
+acc = (0.0+sum(Y==pred1))/len(Y)
+
+print 'acc=',acc
+
+print '--------------\n'
 
 
 #np.random.seed(0)
