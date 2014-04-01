@@ -104,7 +104,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	//int th_mod = t%THREAD_PER_ROW;
 	//const unsigned int th_mod    = (blockDim.x * blockIdx.x + threadIdx.x)%THREAD_PER_ROW;  
 	//determines the class membership, (first cls1_N threads belongs to first class),0 - first class, 1- second class
-	int th_cls = th_group/cls1_N_aligned;
+	int th_cls = th_group/cls1_N_aligned>0 ? 1:0; 
+	
 	
 	//thread offset in particular class
 	int th_cls_offset = th_group - th_cls*(cls1_N_aligned);
