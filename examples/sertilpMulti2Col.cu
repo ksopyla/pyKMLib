@@ -197,7 +197,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			
 			results[row]=y[row]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*shDot[threadIdx.x]));
 			results[row+shClsSum]=y[row]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*shDot[threadIdx.x+STEP]));
-			
+			//for testing 
 			// results[row]=dI;
 			// results[row+shClsSum]=dJ;
 			
