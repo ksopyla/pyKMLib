@@ -149,10 +149,6 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			#pragma unroll
 			for( j=0; j<PREFETCH_SIZE;j++)			
 			{
-				//wrong index
-				//arIdx = (i*PREFETCH_SIZE+j )*align+rowSliceStart+threadIdx.x;
-				//corrected version
-				//arIdx = (i*PREFETCH_SIZE+j )*align+rowSliceStart+sliceOffset*THREAD_PER_ROW+threadIdx.x%THREAD_PER_ROW;
 				arIdx = (i*PREFETCH_SIZE+j )*align+sliceStart[row/SLICE_SIZE]+( row% SLICE_SIZE)*THREAD_PER_ROW+threadIdx.x%THREAD_PER_ROW;
 				preColls[j]=colIdx[arIdx];
 				preVals[j]=vals[arIdx];
@@ -207,120 +203,11 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			
 		}
 		
-		/*
-		shDot[th_mod*SLICE_SIZE+th_group]=dotI[0];
-		shDot[th_mod*SLICE_SIZE+th_group+THREAD_PER_ROW*SLICE_SIZE]=dotJ[0];
 		
-		__syncthreads();		
-
-		//reduction to some level
-		for( j=blockDim.x/2; j>=SLICE_SIZE; j>>=1) //s/=2
-		{
-			if(threadIdx.x<j){
-				shDot[threadIdx.x]+=shDot[threadIdx.x+j];
-			}
-			__syncthreads();
-		}
-		*/
-		
-		//int row = th_cls_offset+th_cls*cls_count[0];
-		////rbf
-		//results[row]=y[row]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*dotI[0]));
-		//results[row+shClsSum]=y[row]*shYJ*expf(-GAMMA*(selfDot[rowOW]+shJSelfDot-2*dotJ[0]));
 	}
 }
 
 
-//xtern "C" __global__ void rbfSERTILP2multiV2(const float * vals,
-//							   const int * colIdx, 
-//							   const int * rowLength, 
-//							   const int * sliceStart,
-//							   const float* selfDot,
-//							   const int* y,
-//							   float * results,
-//							   const int num_rows,
-//							   const int align, //SERTILP format align=threadsPerRow*sliceSize
-//							   const int idxI,//offset indices in a subproblem
-//							   const int idxJ,
-//							   const int idxI_ds,//true indices in a dataset
-//							   const int idxJ_ds,
-//							   const int cls1_N_aligned, //aligned to power of 2 class 1 size
-//							   const int * cls_start, //pointers where each class starts
-//							   const int * cls_count, //2-element array, number of elements in each class
-//							   const int * cls // 2-element array, with class number eg. cls[0]=2, cls[1]=5, binary classifiers between class 2 vs 5
-//							   )
-//
-//
-//	__shared__ float shISelfDot;
-//	__shared__ float shJSelfDot;
-//	__shared__ int shYI;
-//	__shared__ int shYJ;
-//	__shared__ int shClsSum;
-//	__shared__ int shSliceStart;
-//	
-//	//shared memory for final reduction for THREAD_PER_ROW for each kernel column
-//	__shared__  float shDot[THREAD_PER_ROW*SLICE_SIZE*2];
-//	
-//	shDot[threadIdx.x]=0;
-//	shDot[threadIdx.x+THREAD_PER_ROW*SLICE_SIZE]=0;
-//	
-//	if(threadIdx.x==0)
-//	{
-//		shClsSum= cls_count[0]+cls_count[1];
-//		shYI = y[idxI];
-//		shYJ = y[idxJ];
-//		shISelfDot=selfDot[idxI_ds];
-//		shJSelfDot=selfDot[idxJ_ds];
-//		
-//		//TODO:check if is it correct?
-//		shSliceStart=sliceStart[blockIdx.x];
-//	}
-//	__syncthreads();
-//	
-//	// global thread index
-//	const unsigned int t   = blockDim.x * blockIdx.x + threadIdx.x;  
-//
-//	//thread group number, 
-//	int th_group = t/THREAD_PER_ROW;
-//	int th_mod = t%THREAD_PER_ROW;
-//	//determines the class membership, (first cls1_N threads belongs to first class),0 - first class, 1- second class
-//	int th_cls = th_group/cls1_N_aligned;
-//	
-//	
-//	//thread offset in particular class
-//	int th_cls_offset = th_group - th_cls*(cls1_N_aligned);
-//	//or
-//	//int th_cls_offset = t - th_cls*cls1_N_aligned*THREAD_PER_ROW;
-//	
-//	//
-//	if(th_cls_offset<cls_count[th_cls])
-//	{		
-//		int cls_nr = cls[th_cls];
-//		//true row index in a dataset
-//		int row = th_cls_offset+cls_start[cls_nr];
-//		
-//		// //slice number, which particular row belongs in
-//		int sliceStartNr = row/SLICE_SIZE;
-//		// //offset of the row in slice
-//		// int sliceOffset = row% SLICE_SIZE;
-//		
-//		
-//		
-//		if(th_mod==0)
-//		{
-//					
-//			//index within a subset of two considered class
-//			int row = th_cls_offset+th_cls*cls_count[0];
-//			
-//			results[row]=blockIdx.x;
-//			results[row+num_rows]=sliceStartNr;
-//			
-//			// results[row]=row;
-//			// results[row+shClsSum]=row+shClsSum;
-//			
-//		}
-//	}
-//
 
 
 

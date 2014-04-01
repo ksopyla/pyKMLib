@@ -66,15 +66,10 @@ start_cls=np.insert(start_cls,0,0).astype(np.int32)
 
 #---------------------
 
-
-
-
 num_el,dim = X.shape
 gamma = 0.5
 threadsPerRow = 1
 prefetch=2
-
-
 
 rbf = ker.RBF()
 rbf.gamma=gamma

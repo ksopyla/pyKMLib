@@ -30,12 +30,12 @@ iris = datasets.load_iris()
 #
 
 # multiclass 
-#X, Y = datasets.load_svmlight_file('Data/glass.scale.txt')
+X, Y = datasets.load_svmlight_file('Data/glass.scale.txt')
 #X, Y = datasets.load_svmlight_file('glass.scale_3cls.txt')
 
 #binary
 #X, Y = datasets.load_svmlight_file('glass.scale_binary')
-X, Y = datasets.load_svmlight_file('Data/heart_scale')
+#X, Y = datasets.load_svmlight_file('Data/heart_scale')
 #X, Y = datasets.load_svmlight_file('Data/w8a')
 
 #X, Y = datasets.load_svmlight_file('toy_2d_16.train')
