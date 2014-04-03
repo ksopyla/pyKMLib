@@ -15,10 +15,7 @@ It demostrates the usage of pycuda.
 """
 
 
-import pycuda.driver as cuda
-import pycuda.tools
-import pycuda.autoinit
-from pycuda.compiler import SourceModule
+
 
 import numpy as np
 import scipy.sparse as sp
@@ -36,7 +33,8 @@ import Kernels as ker
 
 
 #dsName = 'Data/glass.scale_binary'
-dsName ='Data/w8a'
+#dsName ='Data/w8a'
+dsName = 'Data/glass.scale.txt'
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
 
@@ -95,8 +93,14 @@ print 'CPU RBF takes',t1-t0, 's'
 kij= np.array( [ki,kj]).flatten()
 print kij[0:1000:200]
 
+
+
 ##----------------------------------------------
 # Ellpakc gpu kernel
+import pycuda.driver as cuda
+import pycuda.tools
+import pycuda.autoinit
+from pycuda.compiler import SourceModule
 
 v,c,r=spf.csr2ellpack(X,align=prefetch)
 
@@ -255,7 +259,7 @@ cuda.memcpy_htod(g_gamma, np.float32(gamma) )
 
 g_cls_start = cuda.to_device(start_cls)
 g_cls_count = cuda.to_device(count_cls)
-g_cls = cuda.to_device(np.array([0,1],dtype=np.int32)  )
+g_cls = cuda.to_device(np.array([1,3],dtype=np.int32)  )
 
 
 #start_event = cuda.Event()
