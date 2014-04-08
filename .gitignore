@@ -37,7 +37,8 @@ nosetests.xml
 
 #custom
 nvcc_cache/*
-
+*.log
+*.swp
 .SyncID
 .SyncIgnore
 .spyderproject
