@@ -32,8 +32,8 @@ import Kernels as ker
 #load and reorganize the dataset
 
 
-#dsName = 'Data/glass.scale_binary'
-dsName ='Data/w8a'
+dsName = 'Data/glass.scale_binary'
+#dsName ='Data/w8a'
 #dsName = 'Data/glass.scale.txt'
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
@@ -206,7 +206,7 @@ module = SourceModule(data,keep=True,no_extern_c=True,options=["--ptxas-options=
 func = module.get_function('rbfSERTILP2multi')
 
 #class align to sliceSize
-cls_align=32#sliceSize
+cls_align=sliceSize
 cls1_n = count_cls[0]
 align_cls1_n =  cls1_n+(cls_align-cls1_n%cls_align)%cls_align
 cls2_n = count_cls[1]
