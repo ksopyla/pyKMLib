@@ -33,8 +33,8 @@ import Kernels as ker
 
 
 #dsName = 'Data/glass.scale_binary'
-#dsName ='Data/w8a'
-dsName = 'Data/glass.scale.txt'
+dsName ='Data/w8a'
+#dsName = 'Data/glass.scale.txt'
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
 
@@ -142,11 +142,12 @@ vecI_tex.set_address(g_vecI,vecI.nbytes)
 g_vecJ = cuda.to_device(vecJ)
 vecJ_tex.set_address(g_vecJ,vecJ.nbytes)
 
+#texture list, necessary for pycuda launch function
 texList=[vecI_tex,vecJ_tex]
 
-tpb=128#rozmiar bloku, wielokrotnosc 2
+tpb=128#block size, power of 2
 
-#liczba blokow 
+#grid size, number of blocks
 bpg =int( np.ceil( (threadsPerRow*num_el+0.0)/tpb ))
 
 g_num_el = np.int32(num_el)
@@ -204,15 +205,16 @@ module = SourceModule(data,keep=True,no_extern_c=True,options=["--ptxas-options=
 #get module function
 func = module.get_function('rbfSERTILP2multi')
 
-
-warp=sliceSize#32
+#class align to sliceSize
+cls_align=32#sliceSize
 cls1_n = count_cls[0]
-align_cls1_n =  cls1_n+(warp-cls1_n%warp)%warp
+align_cls1_n =  cls1_n+(cls_align-cls1_n%cls_align)%cls_align
 cls2_n = count_cls[1]
-align_cls2_n =  cls2_n+(warp-cls2_n%warp)%warp 
+align_cls2_n =  cls2_n+(cls_align-cls2_n%cls_align)%cls_align 
 
-tpb=sliceSize*threadsPerRow#rozmiar bloku, wielokrotnosc 2
-#liczba blokow 
+#block size, power of 2
+tpb=sliceSize*threadsPerRow
+#grid size, number of blocks
 bpg =np.ceil(((align_cls1_n+align_cls2_n)*threadsPerRow+0.0)/(tpb))
 bpg=int(bpg)
 #get module texture
@@ -246,16 +248,11 @@ g_j = np.int32(j)
 g_i_ds= np.int32(i)
 g_j_ds= np.int32(j)
 
-
-
-       
 g_cls1N_aligned = np.int32(align_cls1_n)
 
-#gamma copy to constant memory
+#gamma, copy to constant memory
 (g_gamma,gsize)=module.get_global('GAMMA')       
 cuda.memcpy_htod(g_gamma, np.float32(gamma) )
-
-
 
 g_cls_start = cuda.to_device(start_cls)
 g_cls_count = cuda.to_device(count_cls)
