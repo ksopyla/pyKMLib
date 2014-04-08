@@ -32,15 +32,21 @@ import Kernels as ker
 #load and reorganize the dataset
 
 
-dsName = 'Data/glass.scale_binary'
+#dsName = 'Data/glass.scale_binary'
 #dsName ='Data/w8a'
-#dsName = 'Data/glass.scale.txt'
+dsName = 'Data/glass.scale.txt'
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
+
+print "Dataset: ",dsName
+
+
 
 X, Y = datasets.load_svmlight_file(dsName,dtype=np.float32)
 Y=Y.astype(np.float32)
 
+#used for showing some elements in results array
+skip= 30
 #reorder the dataset and compute class statistics
 cls, idx_cls = np.unique(Y, return_inverse=True)
 #contains mapped class [0,nr_cls-1]
@@ -50,6 +56,20 @@ y_map = new_classes[idx_cls]
 #reorder the dataset, group class together
 order =np.argsort(a=y_map,kind='mergesort')
 
+
+### y mapped to binary
+
+#which class should be mapped
+bin_cls = np.array([0,1]);
+bin_map = np.zeros(new_classes.shape)
+y_map_bin = np.zeros_like(y_map)
+
+y_map_bin[y_map==bin_cls[0]] =-1
+y_map_bin[y_map==bin_cls[1]] =1
+#first class is mapped to -1, second to 1
+#bin_map[bin_cls]=np.array([-1,1])
+#for i,val in enumerate(new_classes):
+#    y_map_bin[y_map==i]=bin_map[i] 
 
 
 x=X.todense()
@@ -83,15 +103,18 @@ import time
 #t0=time.clock()
 t0=time.time()
 
-ki =Y[i]*Y* rbf.K_vec(vecI).flatten()
-kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
+#ki =Y[i]*Y* rbf.K_vec(vecI).flatten()
+#kj =Y[j]*Y*rbf.K_vec(vecJ).flatten()
+
+ki =y_map_bin[i]*y_map_bin* rbf.K_vec(vecI).flatten()
+kj =y_map_bin[j]*y_map_bin*rbf.K_vec(vecJ).flatten()
 
 #t1=time.clock()
 t1=time.time()
 
 print 'CPU RBF takes',t1-t0, 's'
 kij= np.array( [ki,kj]).flatten()
-print kij[0:1000:200]
+print kij[0:1000:skip]
 
 
 
@@ -173,7 +196,7 @@ resultsEll = np.copy(results)
 
 print "\nEllpack time ",cuTime*1e-3
 print "Error to CPU:",np.square(resultsEll-kij).sum()
-print resultsEll[0:1000:200]
+print resultsEll[0:1000:skip]
 #print results
 
 ##------------------------------------------
@@ -296,7 +319,7 @@ cuda.memcpy_dtoh(results,g_out)
 print "\nSERTILP time ",cuTime*1e-3
 print "Error to CPU:",np.square(results-kij).sum()
 print "Error to ELlpack:",np.square(results-resultsEll).sum()
-print results[0:1000:200]
+print results[0:1000:skip]
 
 #err=results-resultsEll
 #errIdx=np.where( np.abs(err)>0.0001)
