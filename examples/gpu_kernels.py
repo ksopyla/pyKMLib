@@ -256,8 +256,7 @@ cuda.memcpy_htod(g_gamma, np.float32(gamma) )
 
 g_cls_start = cuda.to_device(start_cls)
 g_cls_count = cuda.to_device(count_cls)
-g_cls = cuda.to_device(np.array([1,3],dtype=np.int32)  )
-
+g_cls = cuda.to_device(np.array([0,1],dtype=np.int32)  )
 
 #start_event = cuda.Event()
 #stop_event = cuda.Event()
