@@ -58,11 +58,11 @@ order =np.argsort(a=y_map,kind='mergesort')
 
 
 ### y mapped to binary
-
 #which class should be mapped
-bin_cls = np.array([0,1]);
+bin_cls = np.array([1,2]);
+
 bin_map = np.zeros(new_classes.shape)
-y_map_bin = np.zeros_like(y_map)
+y_map_bin = np.zeros_like(y_map,dtype=np.float32)
 
 y_map_bin[y_map==bin_cls[0]] =-1
 y_map_bin[y_map==bin_cls[1]] =1
@@ -82,6 +82,9 @@ count_cls=np.bincount(y_map).astype(np.int32)
 start_cls = count_cls.cumsum()
 start_cls=np.insert(start_cls,0,0).astype(np.int32)
 
+i=start_cls[ bin_cls[0] ]+1
+j=start_cls[ bin_cls[1] ]+1
+print i,j
 #---------------------
 
 num_el,dim = X.shape
@@ -94,8 +97,7 @@ rbf.gamma=gamma
 
 rbf.init(X,Y)
 
-i=0
-j=2
+
 vecI = X[i,:].toarray()
 vecJ = X[j,:].toarray()
 
@@ -141,7 +143,7 @@ g_val = cuda.to_device(v)
 g_col = cuda.to_device(c)
 g_r   = cuda.to_device(r)
 g_self = cuda.to_device(self_dot)
-g_y    = cuda.to_device(Y)
+g_y    = cuda.to_device(y_map_bin)
 g_out = cuda.to_device(results)
 
 
@@ -259,7 +261,7 @@ g_col = cuda.to_device(c)
 g_r   = cuda.to_device(r)
 g_slice = cuda.to_device(ss)
 g_self = cuda.to_device(self_dot)
-g_y    = cuda.to_device(Y)
+g_y    = cuda.to_device(y_map_bin)
 g_out = cuda.to_device(results)
 
 g_num_el = np.int32(num_el)
@@ -279,7 +281,9 @@ cuda.memcpy_htod(g_gamma, np.float32(gamma) )
 
 g_cls_start = cuda.to_device(start_cls)
 g_cls_count = cuda.to_device(count_cls)
-g_cls = cuda.to_device(np.array([0,1],dtype=np.int32)  )
+
+
+g_cls = cuda.to_device(bin_cls  )
 
 #start_event = cuda.Event()
 #stop_event = cuda.Event()
