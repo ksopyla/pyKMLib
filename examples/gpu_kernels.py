@@ -232,9 +232,9 @@ func = module.get_function('rbfSERTILP2multi')
 
 #class align to sliceSize
 cls_align=sliceSize
-cls1_n = count_cls[0]
+cls1_n = count_cls[bin_cls[0]]
 align_cls1_n =  cls1_n+(cls_align-cls1_n%cls_align)%cls_align
-cls2_n = count_cls[1]
+cls2_n = count_cls[bin_cls[1]]
 align_cls2_n =  cls2_n+(cls_align-cls2_n%cls_align)%cls_align 
 
 #block size, power of 2
