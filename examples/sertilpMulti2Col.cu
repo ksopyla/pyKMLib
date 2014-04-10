@@ -113,7 +113,7 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 	//int th_cls_offset = t - th_cls*cls1_N_aligned*THREAD_PER_ROW;
 	
 	//
-	if(th_cls_offset<cls_count[th_cls])
+	if(th_cls_offset<cls_count[cls[th_cls]])
 	{		
 		//int cls_nr = cls[th_cls];
 		//true row index in a dataset
@@ -195,7 +195,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			
 			//index within a subset of two considered class
 			//int rIdx =th_cls_offset+th_cls*cls_count[0];
-			
+			//results[row]=th_cls_offset;//cls[0]+2;
+                        //results[row+shClsSum]=cls_count[th_cls];//cls[1]+2;
 			results[row]=y[row]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*shDot[threadIdx.x]));
 			results[row+shClsSum]=y[row]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*shDot[threadIdx.x+STEP]));
 			//for testing 
