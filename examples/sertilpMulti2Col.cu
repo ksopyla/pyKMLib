@@ -200,8 +200,8 @@ extern "C" __global__ void rbfSERTILP2multi(const float * vals,
 			results[row]=y[row]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*shDot[threadIdx.x]));
 			results[row+shClsSum]=y[row]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*shDot[threadIdx.x+STEP]));
 			//for testing 
-			// results[row]=dI;
-			// results[row+shClsSum]=dJ;
+			//results[row]=cls_count[cls[th_cls]];
+			//results[row+shClsSum]=cls_count[cls[th_cls]];
 			
 		}
 		
@@ -277,7 +277,7 @@ extern "C" __global__ void rbfSERTILP2multi_class(const float * vals,
 	//int th_cls_offset = t - th_cls*cls1_N_aligned*THREAD_PER_ROW;
 	
 	
-	if(th_cls_offset<cls_count[th_cls])
+	if(th_cls_offset<cls_count[cls[th_cls]])
 	{		
 		int row = th_cls_offset+cls_start[cls[th_cls]];
 
@@ -361,19 +361,13 @@ extern "C" __global__ void rbfSERTILP2multi_class(const float * vals,
 			//now array 'results' are global and have size equals of number of rows in dataset so row is ok.
 			results[row]=y[row]*shYI*expf(-GAMMA*(selfDot[row]+shISelfDot-2*shDot[threadIdx.x]));
 			results[row+shClsSum]=y[row]*shYJ*expf(-GAMMA*(selfDot[row]+shJSelfDot-2*shDot[threadIdx.x+STEP]));
+
+			//results[row]=cls_count[cls[th_cls]];
+			//results[row+shClsSum]=cls_count[cls[th_cls]];
+
 		}
 		
 		
 	}
 }
-
-
-
-
-
-
-
-
-
-
 

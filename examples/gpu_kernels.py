@@ -317,24 +317,14 @@ stop_event.synchronize()
 cuTime=stop_event.time_since(start_event)
 
 
-
 cuda.memcpy_dtoh(results,g_out)
 resultsSEll = np.copy(results)
 
 print "\nSERTILP time ",cuTime*1e-3
 print "Error to CPU:",np.square(resultsSEll-kij).sum()
 print "Error to ELlpack:",np.square(resultsSEll-resultsEll).sum()
+
 print resultsSEll[0:1000:skip]
-
-
-
-
-
-
-
-
-
-
 
 
 ##------------------------------------------
