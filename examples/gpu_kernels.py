@@ -59,6 +59,7 @@ order =np.argsort(a=y_map,kind='mergesort')
 
 ### y mapped to binary
 #which class should be mapped
+
 bin_cls = np.array([1,2],dtype=np.int32)
 
 bin_map = np.zeros(new_classes.shape)
