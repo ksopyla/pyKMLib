@@ -295,10 +295,10 @@ def csr2sertilp_class(spmat,y,threadsPerRow=2, prefetch=2, sliceSize=64,minAlign
     align = math.ceil( 1.0*sliceSize*threadsPerRow/minAlign)*minAlign
     
     #first we compute how many slices falls on a each class, than sum it    
-    numSlices = int(np.ceil(1.0*count_cls/sliceSize).sum())
+    class_slices=np.ceil(1.0*count_cls/sliceSize)
+    numSlices = int(class_slices.sum())
+    class_slices =  np.insert(class_slices.cumsum(),0,0).astype(np.int32)
     
-    #slice_start=np.zeros(numSlices+1,dtype=np.int)
-        
         
     #compute maximum nonzero elements in row, 
     #max difference between two neighbour index pointers in csr format
@@ -365,4 +365,4 @@ def csr2sertilp_class(spmat,y,threadsPerRow=2, prefetch=2, sliceSize=64,minAlign
             colIdx[idx]= vec.indices[k]
         
     
-    return values,colIdx,rowLen,slice_start
+    return values,colIdx,rowLen,slice_start, class_slices

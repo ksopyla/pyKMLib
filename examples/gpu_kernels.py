@@ -59,7 +59,7 @@ order =np.argsort(a=y_map,kind='mergesort')
 
 ### y mapped to binary
 #which class should be mapped
-bin_cls = np.array([1,2]);
+bin_cls = np.array([1,2],dtype=np.int32)
 
 bin_map = np.zeros(new_classes.shape)
 y_map_bin = np.zeros_like(y_map,dtype=np.float32)
@@ -283,7 +283,7 @@ g_cls_start = cuda.to_device(start_cls)
 g_cls_count = cuda.to_device(count_cls)
 
 
-g_cls = cuda.to_device(bin_cls  )
+g_cls = cuda.to_device(bin_cls)
 
 #start_event = cuda.Event()
 #stop_event = cuda.Event()
@@ -325,9 +325,139 @@ print "Error to CPU:",np.square(results-kij).sum()
 print "Error to ELlpack:",np.square(results-resultsEll).sum()
 print results[0:1000:skip]
 
-#err=results-resultsEll
-#errIdx=np.where( np.abs(err)>0.0001)
-#print errIdx[0].shape
-#print errIdx
-#
-#print np.array([results[errIdx],resultsEll[errIdx]]).T
+
+
+
+
+
+
+
+
+
+
+
+##------------------------------------------
+# SERTILP class aligna gpu kernel
+
+
+sliceSize=64
+threadsPerRow=2
+prefetch=2
+minAlign=64 #8
+v,c,r,ss,cls_slice=spf.csr2sertilp_class(X,y_map,
+                         threadsPerRow=threadsPerRow, 
+                         prefetch=prefetch, 
+                         sliceSize=sliceSize,
+                         minAlign=minAlign)
+
+sd=rbf.Diag
+self_dot = rbf.Xsquare
+results = np.zeros(2*num_el,dtype=np.float32)
+
+kernel_file = "sertilpMulti2Col.cu"
+
+with open (kernel_file,"r") as CudaFile:
+    data = CudaFile.read();
+       
+#compile module
+#module = SourceModule(data,cache_dir='./nvcc_cache',keep=True,no_extern_c=True)
+module = SourceModule(data,keep=True,no_extern_c=True,options=["--ptxas-options=-v"])
+#get module function
+func = module.get_function('rbfSERTILP2multi_class')
+
+#class align to sliceSize
+cls_align=sliceSize
+cls1_n = count_cls[bin_cls[0]]
+align_cls1_n =  cls1_n+(cls_align-cls1_n%cls_align)%cls_align
+cls2_n = count_cls[bin_cls[1]]
+align_cls2_n =  cls2_n+(cls_align-cls2_n%cls_align)%cls_align 
+
+#block size, power of 2
+tpb=sliceSize*threadsPerRow
+#grid size, number of blocks
+bpg =np.ceil(((align_cls1_n+align_cls2_n)*threadsPerRow+0.0)/(tpb))
+bpg=int(bpg)
+#get module texture
+vecI_tex=module.get_texref('VecI_TexRef')
+vecJ_tex=module.get_texref('VecJ_TexRef')
+
+#copy data to tex ref
+g_vecI = cuda.to_device(vecI)
+vecI_tex.set_address(g_vecI,vecI.nbytes)
+g_vecJ = cuda.to_device(vecJ)
+vecJ_tex.set_address(g_vecJ,vecJ.nbytes)
+
+texList=[vecI_tex,vecJ_tex]
+
+
+#copy memory to device
+g_val = cuda.to_device(v)
+g_col = cuda.to_device(c)
+g_r   = cuda.to_device(r)
+g_slice = cuda.to_device(ss)
+g_cls_slice = cuda.to_device(cls_slice)
+g_self = cuda.to_device(self_dot)
+g_y    = cuda.to_device(y_map_bin)
+g_out = cuda.to_device(results)
+
+g_num_el = np.int32(num_el)
+
+align = np.ceil( 1.0*sliceSize*threadsPerRow/minAlign)*minAlign
+g_align = np.int32(align)
+g_i = np.int32(i)
+g_j = np.int32(j)
+g_i_ds= np.int32(i)
+g_j_ds= np.int32(j)
+
+g_cls1N_aligned = np.int32(align_cls1_n)
+
+#gamma, copy to constant memory
+(g_gamma,gsize)=module.get_global('GAMMA')       
+cuda.memcpy_htod(g_gamma, np.float32(gamma) )
+
+g_cls_start = cuda.to_device(start_cls)
+g_cls_count = cuda.to_device(count_cls)
+
+
+g_cls = cuda.to_device(bin_cls)
+
+#start_event = cuda.Event()
+#stop_event = cuda.Event()
+
+start_event.record()
+
+func(g_val,
+     g_col,
+     g_r,
+     g_slice, 
+     g_self,
+     g_y,
+     g_out,
+     g_num_el,
+     g_align, 
+     g_i,
+     g_j,
+     g_i_ds,
+     g_j_ds,
+     g_cls1N_aligned,
+     g_cls_start,
+     g_cls_count,
+     g_cls,
+     g_cls_slice,
+     block=(tpb,1,1),grid=(bpg,1),texrefs=texList)
+
+stop_event.record()
+
+stop_event.synchronize()
+
+cuTime=stop_event.time_since(start_event)
+
+
+
+cuda.memcpy_dtoh(results,g_out)
+
+
+print "\nSERTILP class time ",cuTime*1e-3
+print "Error to CPU:",np.square(results-kij).sum()
+print "Error to ELlpack:",np.square(results-resultsEll).sum()
+print results[0:1000:skip]

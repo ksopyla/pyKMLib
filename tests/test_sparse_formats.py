@@ -76,6 +76,7 @@ class TestSparseFormats(unittest.TestCase):
         sp_mat = sp.csr_matrix(mat)
         row_len_right = np.array([1,1,1,1,1,1,1,1])        
         sl_start_right = np.array([0,16,32, 48])
+        cls_slice_right = np.array([0,1,2,3])
         
         val_right = np.array([1.0,2.0, 4.0,5.0, 6.0,7.0, 0.0,0.0,
                               3.0,0.0, 0.0,0.0, 0.0,0.0, 0.0,0.0,
@@ -91,7 +92,7 @@ class TestSparseFormats(unittest.TestCase):
                                  0,2,  3,4,  5,0,  0,0, 
                                  0,0,  0,0,  0,0,  0,0])                              
         
-        val,col,row_len,sl_start=spf.csr2sertilp_class(sp_mat,y,
+        val,col,row_len,sl_start,cls_slice=spf.csr2sertilp_class(sp_mat,y,
                                             threadsPerRow=threadsPerRow, 
                                             prefetch=prefetch,
                                             sliceSize=sliceSize,
@@ -99,6 +100,7 @@ class TestSparseFormats(unittest.TestCase):
                                                     
         self.assertTrue(np.allclose(row_len,row_len_right), 'sliced ellpack row length arrays are not equal')
         self.assertTrue(np.allclose(sl_start,sl_start_right), 'sliced ellpack slice start arrays are not equal')       
+        self.assertTrue(np.allclose(cls_slice,cls_slice_right), 'sliced ellpack class slice start arrays are not equal')       
         self.assertTrue(np.allclose(val,val_right), 'sliced ellpack values arrays are not equal')
         self.assertTrue(np.allclose(col,col_right), 'sliced ellpack collumns arrays are not equal')
        
@@ -125,6 +127,7 @@ class TestSparseFormats(unittest.TestCase):
         sp_mat = sp.csr_matrix(mat)
         row_len_right = np.array([1,1,1,1,1,1,1,1,1,1])        
         sl_start_right = np.array([0,16,32,48,64])
+        cls_slice_right = np.array([0,2,3,4])
         
         val_right = np.array([1.0,2.0, 1.0,2.0, 1.0,2.0, 4.0,5.0, 
                               3.0,0.0, 0.0,0.0, 3.0,4.0, 0.0,0.0,
@@ -144,7 +147,7 @@ class TestSparseFormats(unittest.TestCase):
                               0,2,  3,4,  5,0,  0,0, 
                               0,0,  0,0,  0,0,  0,0])                              
         
-        val,col,row_len,sl_start=spf.csr2sertilp_class(sp_mat,y,
+        val,col,row_len,sl_start, cls_slice=spf.csr2sertilp_class(sp_mat,y,
                                             threadsPerRow=threadsPerRow, 
                                             prefetch=prefetch,
                                             sliceSize=sliceSize,
@@ -152,6 +155,7 @@ class TestSparseFormats(unittest.TestCase):
                                                     
         self.assertTrue(np.allclose(row_len,row_len_right), 'sliced ellpack row length arrays are not equal')
         self.assertTrue(np.allclose(sl_start,sl_start_right), 'sliced ellpack slice start arrays are not equal')       
+        self.assertTrue(np.allclose(cls_slice,cls_slice_right), 'sliced ellpack class slice start arrays are not equal')       
         self.assertTrue(np.allclose(val,val_right), 'sliced ellpack values arrays are not equal')
         self.assertTrue(np.allclose(col,col_right), 'sliced ellpack collumns arrays are not equal')
        
