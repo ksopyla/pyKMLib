@@ -319,11 +319,11 @@ cuTime=stop_event.time_since(start_event)
 
 
 cuda.memcpy_dtoh(results,g_out)
-
+resultsSEll = np.copy(results)
 
 print "\nSERTILP time ",cuTime*1e-3
-print "Error to CPU:",np.square(results-kij).sum()
-print "Error to ELlpack:",np.square(results-resultsEll).sum()
+print "Error to CPU:",np.square(resultsSEll-kij).sum()
+print "Error to ELlpack:",np.square(resultsSEll-resultsEll).sum()
 print results[0:1000:skip]
 
 
@@ -456,9 +456,9 @@ cuTime=stop_event.time_since(start_event)
 
 
 cuda.memcpy_dtoh(results,g_out)
-
+resultsSEllC = np.copy(results)
 
 print "\nSERTILP class time ",cuTime*1e-3
-print "Error to CPU:",np.square(results-kij).sum()
-print "Error to ELlpack:",np.square(results-resultsEll).sum()
+print "Error to CPU:",np.square(resultsSEllC-kij).sum()
+print "Error to ELlpack:",np.square(resultsSEllC-resultsEll).sum()
 print results[0:1000:skip]
