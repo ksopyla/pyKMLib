@@ -62,7 +62,7 @@ order =np.argsort(a=y_map,kind='mergesort')
 
 bin_cls = np.array([1,2],dtype=np.int32)
 
-bin_map = np.zeros(new_classes.shape)
+#bin_map = np.zeros(new_classes.shape)
 y_map_bin = np.zeros_like(y_map,dtype=np.float32)
 
 y_map_bin[y_map==bin_cls[0]] =-1
