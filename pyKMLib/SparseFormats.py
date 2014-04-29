@@ -313,19 +313,21 @@ def csr2sertilp_class(spmat,y,threadsPerRow=2, prefetch=2, sliceSize=64,minAlign
     #resize and fill with zeros if necessary
 
     #get max nnz el in each slice not in class 
-    maxInSlice=np.array([rowDiff[y==i].max() for i in cls])
+    #maxInSlice=np.array([rowDiff[y==i].max() for i in cls])
 
-    #split class boundaries     
+    #split class boundaries, start_cls from first element to  one before last    
     gs=np.split(rowDiff,start_cls[1:-1])
     #split in class into slice
     from itertools import izip_longest    
-    sliceInClass=[list(izip_longest(*[iter(g)]*4, fillvalue=0))  for g in gs]
+    #sliceInClass=[list(izip_longest(*[iter(g)]*4, fillvalue=0))  for g in gs]
+    sliceInClass=[list(izip_longest(*[iter(g)]*sliceSize, fillvalue=0))  for g in gs]
     sliceInClass = np.vstack(sliceInClass)
     
-      #get max values
+    #get max values
     maxInSlice = np.max(sliceInClass,axis=1)
-    maxInSlice=np.ceil(1.0*maxInSlice/(prefetch*threadsPerRow))*prefetch*align   
-    slice_start=np.insert(np.cumsum(maxInSlice),0,0).astype(np.int32,copy=False)
+    #how many nnz elements is in slice(with alignment)    
+    elementsInSlice=np.ceil(1.0*maxInSlice/(prefetch*threadsPerRow))*prefetch*align   
+    slice_start=np.insert(np.cumsum(elementsInSlice),0,0).astype(np.int32,copy=False)
 
     
     nnzEl = slice_start[numSlices]
@@ -360,6 +362,8 @@ def csr2sertilp_class(spmat,y,threadsPerRow=2, prefetch=2, sliceSize=64,minAlign
             threadNr=k%threadsPerRow
 
             idx = slice_start[sliceNr]+align*rowSlice+rowInSlice*threadsPerRow+threadNr            
+            if(idx>(13678850-1)  ):          
+                print i,idx            
             
             values[idx]= vec.data[k]
             colIdx[idx]= vec.indices[k]

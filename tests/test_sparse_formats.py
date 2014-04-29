@@ -159,6 +159,73 @@ class TestSparseFormats(unittest.TestCase):
         self.assertTrue(np.allclose(val,val_right), 'sliced ellpack values arrays are not equal')
         self.assertTrue(np.allclose(col,col_right), 'sliced ellpack collumns arrays are not equal')
        
+       
+    def test_csr2sertilp_class_grather_than_slice_size_unequal(self):
+        
+        threadsPerRow=2
+        prefetch=2
+        sliceSize=2
+        minAlign=threadsPerRow*sliceSize
+
+#        mat = np.array([ [1,2,3,4,5,6] ])
+#        y = np.array([0]) 
+
+#        mat = np.array([ [1,0,2,0,3,0], 
+#                         [1,2,0,0,0,0],
+#                         [1,2,3,4,5,6] ])#,  
+#        y = np.array([0,0,0]) 
+        
+
+        mat = np.array([ [1,0,2,0,3,0], 
+                         [1,2,0,0,0,0],
+                         [1,2,3,4,5,6],
+
+                         [6,5,4,3,2,1],
+                         [0,0,0,6,7,0],
+                         [0,0,0,0,0,8],
+
+                         [9,0,10,0,11,0], 
+                         [12,0,13,0,0,0],
+                         [0,0,0,14,15,0],
+
+                         [1,2,3,4,5,17],
+                         [0,0,0,0,0,18],
+                         [0,0,0,0,0,19]
+                       ])
+        y = np.array([0,0,0,1,1,1,2,2,2,3,3,3])
+
+        sp_mat = sp.csr_matrix(mat)
+        row_len_right = np.array([1,1,2,2,1,1,1,1,1,2,1,1])        
+        sl_start_right = np.array([ 0,  8, 24, 40, 48, 56, 64, 80, 88])
+        cls_slice_right = np.array([0,2,4,6,8])
+        
+        val_right = np.array([  1.,   2.,   1.,   2.,   3.,   0.,   0.,   0.,   1.,   2.,   0.,
+                                0.,   3.,   4.,   0.,   0.,   5.,   6.,   0.,   0.,   0.,   0.,
+                                0.,   0.,   6.,   5.,   6.,   7.,   4.,   3.,   0.,   0.,   2.,
+                                1.,   0.,   0.,   0.,   0.,   0.,   0.,   8.,   0.,   0.,   0.,
+                                0.,   0.,   0.,   0.,   9.,  10.,  12.,  13.,  11.,   0.,   0.,
+                                0.,  14.,  15.,   0.,   0.,   0.,   0.,   0.,   0.,   1.,   2.,
+                                18.,   0.,   3.,   4.,   0.,   0.,   5.,  17.,   0.,   0.,   0.,
+                                0.,   0.,   0.,  19.,   0.,   0.,   0.,   0.,   0.,   0.,   0.])
+                            
+                              
+        col_right = np.array([0, 2, 0, 1, 4, 0, 0, 0, 0, 1, 0, 0, 2, 3, 0, 0, 4, 5, 0, 0, 0, 0, 0,
+                              0, 0, 1, 3, 4, 2, 3, 0, 0, 4, 5, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0,
+                              0, 0, 0, 2, 0, 2, 4, 0, 0, 0, 3, 4, 0, 0, 0, 0, 0, 0, 0, 1, 5, 0, 2,
+                              3, 0, 0, 4, 5, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0])
+        
+        val,col,row_len,sl_start, cls_slice=spf.csr2sertilp_class(sp_mat,y,
+                                            threadsPerRow=threadsPerRow, 
+                                            prefetch=prefetch,
+                                            sliceSize=sliceSize,
+                                            minAlign=minAlign)
+                                                    
+        self.assertTrue(np.allclose(row_len,row_len_right), 'sliced ellpack row length arrays are not equal')
+        self.assertTrue(np.allclose(sl_start,sl_start_right), 'sliced ellpack slice start arrays are not equal')       
+        self.assertTrue(np.allclose(cls_slice,cls_slice_right), 'sliced ellpack class slice start arrays are not equal')       
+        self.assertTrue(np.allclose(val,val_right), 'sliced ellpack values arrays are not equal')
+        self.assertTrue(np.allclose(col,col_right), 'sliced ellpack collumns arrays are not equal')
+              
                 
  
  

@@ -34,7 +34,7 @@ import Kernels as ker
 
 #dsName = 'Data/glass.scale_binary'
 #dsName ='Data/w8a'
-dsName = 'Data/glass.scale.txt'
+#dsName = 'Data/glass.scale.txt'
 dsName = 'Data/mnist.scale'
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_ones.train',dtype=np.float32)
 #X, Y = datasets.load_svmlight_file('Data/toy_2d_20_order.train',dtype=np.float32)
@@ -48,20 +48,31 @@ Y=Y.astype(np.float32)
 
 #used for showing some elements in results array
 skip= 30
-#reorder the dataset and compute class statistics
-cls, idx_cls = np.unique(Y, return_inverse=True)
-#contains mapped class [0,nr_cls-1]
-nr_cls = cls.shape[0] 
-new_classes = np.arange(0,nr_cls,dtype=np.int32)
-y_map = new_classes[idx_cls]
-#reorder the dataset, group class together
-order =np.argsort(a=y_map,kind='mergesort')
 
+##reorder the dataset and compute class statistics
+
+#get all different class labels np. 0,1,4,7 - not all might occur
+cls, idx_cls = np.unique(Y, return_inverse=True)
+#number of different class
+nr_cls = cls.shape[0] 
+#create new continous class numbers from 0 til nr_cls
+new_classes = np.arange(0,nr_cls,dtype=np.int32)
+#remap class labels, change from orginal to new_classes
+y_map = new_classes[idx_cls]
+#sort by class label, 
+order =np.argsort(a=y_map,kind='mergesort')
+#reorder dataset, group class together
+x = X.todense()
+x = x[order,:]
+X = sp.csr_matrix(x)
+Y = Y[order]
+
+y_map=y_map[order]
 
 ### y mapped to binary
 #which class should be mapped
 
-bin_cls = np.array([1,2],dtype=np.int32)
+bin_cls = np.array([0,1],dtype=np.int32)
 
 #bin_map = np.zeros(new_classes.shape)
 y_map_bin = np.zeros_like(y_map,dtype=np.float32)
@@ -74,11 +85,7 @@ y_map_bin[y_map==bin_cls[1]] =1
 #    y_map_bin[y_map==i]=bin_map[i] 
 
 
-x=X.todense()
-x=x[order,:]
-X = sp.csr_matrix(x)
-Y=Y[order]
-#print spx.data
+
 
 count_cls=np.bincount(y_map).astype(np.int32)
 start_cls = count_cls.cumsum()
@@ -118,16 +125,18 @@ t1=time.time()
 
 print 'CPU RBF takes',t1-t0, 's'
 kij= np.array( [ki,kj]).flatten()
+print 'Total sum:',kij.sum()
 print kij[0:1000:skip]
 
 
-
-##----------------------------------------------
-# Ellpakc gpu kernel
 import pycuda.driver as cuda
 import pycuda.tools
 import pycuda.autoinit
 from pycuda.compiler import SourceModule
+
+##----------------------------------------------
+# Ellpakc gpu kernel
+
 
 v,c,r=spf.csr2ellpack(X,align=prefetch)
 
@@ -199,6 +208,7 @@ resultsEll = np.copy(results)
 
 
 print "\nEllpack time ",cuTime*1e-3
+print 'Total sum:',resultsEll.sum()
 print "Error to CPU:",np.square(resultsEll-kij).sum()
 print resultsEll[0:1000:skip]
 #print results
@@ -322,6 +332,7 @@ cuda.memcpy_dtoh(results,g_out)
 resultsSEll = np.copy(results)
 
 print "\nSERTILP time ",cuTime*1e-3
+print 'Total sum:',resultsSEll.sum()
 print "Error to CPU:",np.square(resultsSEll-kij).sum()
 print "Error to ELlpack:",np.square(resultsSEll-resultsEll).sum()
 
@@ -450,6 +461,7 @@ cuda.memcpy_dtoh(results,g_out)
 resultsSEllC = np.copy(results)
 
 print "\nSERTILP class time ",cuTime*1e-3
+print 'Total sum:',resultsSEllC.sum()
 print "Error to CPU:",np.square(resultsSEllC-kij).sum()
 print "Error to ELlpack:",np.square(resultsSEllC-resultsEll).sum()
 print resultsSEllC[0:1000:skip]
