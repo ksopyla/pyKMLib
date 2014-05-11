@@ -7,6 +7,7 @@ CUDA SVM in python.
 
 It is a partial python port of .net KMLib project https://github.com/ksirg/KMLib 
 
+author: Krzysztof Sopyła (krzysztofsopyla@gmail.com)
 
 
 Prerequisits
