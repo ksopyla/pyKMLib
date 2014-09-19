@@ -56,7 +56,14 @@ class TestSparseFormats(unittest.TestCase):
         self.assertTrue(np.allclose(col,col_right), 'sliced ellpack collumns arrays are not equal')
        
     def test_csr2sertilp_class_smaller_than_slice_size(self):
+        '''
+        The function tests the method of creation of sertilp_class representation
+        in which each class is algin to slice_size, when class is smaller than slice_size
+        than it is padded with 'slice_size - n' rows filled with zeros.
         
+        There are 8 rows for three different classes [0,1,2], in each class
+        the number of rows is smaller than sliceSize
+        '''
         threadsPerRow=2
         prefetch=2
         sliceSize=4
