@@ -6,6 +6,7 @@ Created on Fri Dec 06 16:01:51 2013
 @email: krzysztofsopyla@gmail.com
 @githubuser: ksirg
 @license: MIT
+
 """
 
 
